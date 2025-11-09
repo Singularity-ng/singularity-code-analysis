@@ -87,7 +87,7 @@ pub trait Checker {
 
 impl Checker for PreprocCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Preproc::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
@@ -115,7 +115,7 @@ impl Checker for PreprocCode {
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Preproc::StringLiteral || node.kind_id() == Preproc::RawStringLiteral
+        matches!(node.kind(), "string_literal" | "raw_string_literal")
     }
 
     fn is_else_if(_: &Node) -> bool {
@@ -129,7 +129,7 @@ impl Checker for PreprocCode {
 
 impl Checker for CcommentCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Ccomment::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(node: &Node, code: &[u8]) -> bool {
@@ -157,7 +157,7 @@ impl Checker for CcommentCode {
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Ccomment::StringLiteral || node.kind_id() == Ccomment::RawStringLiteral
+        matches!(node.kind(), "string_literal" | "raw_string_literal")
     }
 
     fn is_else_if(_: &Node) -> bool {
@@ -283,7 +283,7 @@ impl Checker for PythonCode {
 
 impl Checker for JavaCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Java::LineComment || node.kind_id() == Java::BlockComment
+        matches!(node.kind(), "line_comment" | "block_comment")
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
@@ -292,21 +292,21 @@ impl Checker for JavaCode {
 
     fn is_func_space(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Java::Program | Java::ClassDeclaration | Java::InterfaceDeclaration
+            node.kind(),
+            "program" | "class_declaration" | "interface_declaration"
         )
     }
 
     fn is_func(node: &Node) -> bool {
-        node.kind_id() == Java::MethodDeclaration || node.kind_id() == Java::ConstructorDeclaration
+        matches!(node.kind(), "method_declaration" | "constructor_declaration")
     }
 
     fn is_closure(node: &Node) -> bool {
-        node.kind_id() == Java::LambdaExpression
+        node.kind() == "lambda_expression"
     }
 
     fn is_call(node: &Node) -> bool {
-        node.kind_id() == Java::MethodInvocation
+        node.kind() == "method_invocation"
     }
 
     fn is_non_arg(_: &Node) -> bool {
@@ -314,7 +314,7 @@ impl Checker for JavaCode {
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Java::StringLiteral
+        node.kind() == "string_literal"
     }
 
     fn is_else_if(_: &Node) -> bool {
@@ -328,7 +328,7 @@ impl Checker for JavaCode {
 
 impl Checker for MozjsCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Mozjs::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
@@ -337,43 +337,40 @@ impl Checker for MozjsCode {
 
     fn is_func_space(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Mozjs::Program
-                | Mozjs::FunctionExpression
-                | Mozjs::Class
-                | Mozjs::GeneratorFunction
-                | Mozjs::FunctionDeclaration
-                | Mozjs::MethodDefinition
-                | Mozjs::GeneratorFunctionDeclaration
-                | Mozjs::ClassDeclaration
-                | Mozjs::ArrowFunction
+            node.kind(),
+            "program"
+                | "function_expression"
+                | "class"
+                | "generator_function"
+                | "function_declaration"
+                | "method_definition"
+                | "generator_function_declaration"
+                | "class_declaration"
+                | "arrow_function"
         )
     }
 
     is_js_func_and_closure_checker!(MozjsParser, Mozjs);
 
     fn is_call(node: &Node) -> bool {
-        node.kind_id() == Mozjs::CallExpression
+        node.kind() == "call_expression"
     }
 
     fn is_non_arg(node: &Node) -> bool {
-        matches!(
-            node.kind_id().into(),
-            Mozjs::LPAREN | Mozjs::COMMA | Mozjs::RPAREN
-        )
+        matches!(node.kind(), "(" | "," | ")")
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Mozjs::String || node.kind_id() == Mozjs::TemplateString
+        node.kind() == "string" || node.kind() == "template_string"
     }
 
     #[inline(always)]
     fn is_else_if(node: &Node) -> bool {
-        if node.kind_id() != Mozjs::IfStatement {
+        if node.kind() != "if_statement" {
             return false;
         }
         if let Some(parent) = node.parent() {
-            return parent.kind_id() == Mozjs::ElseClause;
+            return parent.kind() == "else_clause";
         }
         false
     }
@@ -551,12 +548,12 @@ impl Checker for TsxCode {
 
 impl Checker for RustCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Rust::LineComment || node.kind_id() == Rust::BlockComment
+        matches!(node.kind(), "line_comment" | "block_comment")
     }
 
     fn is_useful_comment(node: &Node, code: &[u8]) -> bool {
         if let Some(parent) = node.parent() {
-            if parent.kind_id() == Rust::TokenTree {
+            if parent.kind() == "token_tree" {
                 // A comment could be a macro token
                 return true;
             }
@@ -567,45 +564,45 @@ impl Checker for RustCode {
 
     fn is_func_space(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Rust::SourceFile
-                | Rust::FunctionItem
-                | Rust::ImplItem
-                | Rust::TraitItem
-                | Rust::ClosureExpression
+            node.kind(),
+            "source_file"
+                | "function_item"
+                | "impl_item"
+                | "trait_item"
+                | "closure_expression"
         )
     }
 
     fn is_func(node: &Node) -> bool {
-        node.kind_id() == Rust::FunctionItem
+        node.kind() == "function_item"
     }
 
     fn is_closure(node: &Node) -> bool {
-        node.kind_id() == Rust::ClosureExpression
+        node.kind() == "closure_expression"
     }
 
     fn is_call(node: &Node) -> bool {
-        node.kind_id() == Rust::CallExpression
+        node.kind() == "call_expression"
     }
 
     fn is_non_arg(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Rust::LPAREN | Rust::COMMA | Rust::RPAREN | Rust::PIPE | Rust::AttributeItem
+            node.kind(),
+            "(" | "," | ")" | "|" | "attribute_item"
         )
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Rust::StringLiteral || node.kind_id() == Rust::RawStringLiteral
+        matches!(node.kind(), "string_literal" | "raw_string_literal")
     }
 
     #[inline(always)]
     fn is_else_if(node: &Node) -> bool {
-        if node.kind_id() != Rust::IfExpression {
+        if node.kind() != "if_expression" {
             return false;
         }
         if let Some(parent) = node.parent() {
-            return parent.kind_id() == Rust::ElseClause;
+            return parent.kind() == "else_clause";
         }
         false
     }
@@ -616,37 +613,48 @@ impl Checker for RustCode {
     }
 }
 
+// Kotlin implementation - based on tree-sitter-kotlin (currently disabled due to API differences)
 impl Checker for KotlinCode {
-    fn is_comment(_: &Node) -> bool {
-        false
+    fn is_comment(node: &Node) -> bool {
+        matches!(node.kind(), "line_comment" | "block_comment")
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
         false
     }
 
-    fn is_func_space(_: &Node) -> bool {
-        false
+    fn is_func_space(node: &Node) -> bool {
+        matches!(
+            node.kind(),
+            "source_file"
+            | "class_declaration"
+            | "function_declaration"
+            | "lambda_literal"
+            | "anonymous_function"
+        )
     }
 
-    fn is_func(_: &Node) -> bool {
-        false
+    fn is_func(node: &Node) -> bool {
+        node.kind() == "function_declaration"
     }
 
-    fn is_closure(_: &Node) -> bool {
-        false
+    fn is_closure(node: &Node) -> bool {
+        matches!(node.kind(), "lambda_literal" | "anonymous_function")
     }
 
-    fn is_call(_: &Node) -> bool {
-        false
+    fn is_call(node: &Node) -> bool {
+        node.kind() == "call_expression"
     }
 
     fn is_non_arg(_: &Node) -> bool {
         false
     }
 
-    fn is_string(_: &Node) -> bool {
-        false
+    fn is_string(node: &Node) -> bool {
+        matches!(
+            node.kind(),
+            "string_literal" | "multiline_string_literal"
+        )
     }
 
     fn is_else_if(_: &Node) -> bool {
@@ -663,7 +671,7 @@ impl Checker for KotlinCode {
 // Elixir implementation - based on tree-sitter-elixir 0.3.4
 impl Checker for ElixirCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Elixir::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
@@ -674,30 +682,30 @@ impl Checker for ElixirCode {
     fn is_func_space(node: &Node) -> bool {
         // Elixir function spaces: source file, do blocks (which contain functions)
         matches!(
-            node.kind_id().into(),
-            Elixir::Source | Elixir::DoBlock | Elixir::AnonymousFunction
+            node.kind(),
+            "source" | "do_block" | "anonymous_function"
         )
     }
 
     fn is_func(node: &Node) -> bool {
         // In Elixir, functions are identified by `def` and `defp` calls
         // These appear as Call nodes with identifier "def" or "defp"
-        if node.kind_id() != Elixir::Call {
+        if node.kind() != "call" {
             return false;
         }
         // Check if first child is identifier matching a function-defining keyword
         node.child(0)
-            .filter(|child| child.kind_id() == Elixir::Identifier)
+            .filter(|child| child.kind() == "identifier")
             .map(|child| node_text_equals_any(&child, &["def", "defp", "defmacro", "defmacrop"]))
             .unwrap_or(false)
     }
 
     fn is_closure(node: &Node) -> bool {
-        node.kind_id() == Elixir::AnonymousFunction
+        node.kind() == "anonymous_function"
     }
 
     fn is_call(node: &Node) -> bool {
-        node.kind_id() == Elixir::Call
+        node.kind() == "call"
     }
 
     fn is_non_arg(_node: &Node) -> bool {
@@ -708,8 +716,8 @@ impl Checker for ElixirCode {
 
     fn is_string(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Elixir::String | Elixir::Charlist | Elixir::QuotedContent
+            node.kind(),
+            "string" | "charlist" | "quoted_content"
         )
     }
 
@@ -730,7 +738,7 @@ impl Checker for ElixirCode {
 // Erlang implementation - based on tree-sitter-erlang 0.15.0
 impl Checker for ErlangCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Erlang::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
@@ -741,31 +749,31 @@ impl Checker for ErlangCode {
     fn is_func_space(node: &Node) -> bool {
         // Erlang function spaces: source file, function declarations, anonymous functions
         matches!(
-            node.kind_id().into(),
-            Erlang::SourceFile
-                | Erlang::FunDecl
-                | Erlang::FunctionClause
-                | Erlang::AnonymousFun
-                | Erlang::ClauseBody
+            node.kind(),
+            "source_file"
+                | "fun_decl"
+                | "function_clause"
+                | "anonymous_fun"
+                | "clause_body"
         )
     }
 
     fn is_func(node: &Node) -> bool {
         // Erlang function declarations
         matches!(
-            node.kind_id().into(),
-            Erlang::FunDecl | Erlang::FunctionClause
+            node.kind(),
+            "fun_decl" | "function_clause"
         )
     }
 
     fn is_closure(node: &Node) -> bool {
         // Erlang anonymous functions (fun ... end)
-        node.kind_id() == Erlang::AnonymousFun
+        node.kind() == "anonymous_fun"
     }
 
     fn is_call(node: &Node) -> bool {
         // Erlang function calls
-        node.kind_id() == Erlang::Call
+        node.kind() == "call"
     }
 
     fn is_non_arg(_node: &Node) -> bool {
@@ -776,7 +784,7 @@ impl Checker for ErlangCode {
     fn is_string(node: &Node) -> bool {
         // Erlang doesn't have a dedicated string node (strings are lists of chars)
         // But there might be char nodes
-        node.kind_id() == Erlang::Char
+        node.kind() == "char"
     }
 
     fn is_else_if(_node: &Node) -> bool {
@@ -794,8 +802,8 @@ impl Checker for ErlangCode {
 impl Checker for GleamCode {
     fn is_comment(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Gleam::Comment | Gleam::ModuleComment | Gleam::StatementComment
+            node.kind(),
+            "comment" | "module_comment" | "statement_comment"
         )
     }
 
@@ -807,28 +815,28 @@ impl Checker for GleamCode {
     fn is_func_space(node: &Node) -> bool {
         // Gleam function spaces: source file, functions, anonymous functions, blocks
         matches!(
-            node.kind_id().into(),
-            Gleam::SourceFile
-                | Gleam::Function
-                | Gleam::AnonymousFunction
-                | Gleam::FunctionBody
-                | Gleam::Block
+            node.kind(),
+            "source_file"
+                | "function"
+                | "anonymous_function"
+                | "function_body"
+                | "block"
         )
     }
 
     fn is_func(node: &Node) -> bool {
         // Gleam function declarations (pub fn or fn)
-        node.kind_id() == Gleam::Function
+        node.kind() == "function"
     }
 
     fn is_closure(node: &Node) -> bool {
         // Gleam anonymous functions
-        node.kind_id() == Gleam::AnonymousFunction
+        node.kind() == "anonymous_function"
     }
 
     fn is_call(node: &Node) -> bool {
         // Gleam function calls
-        node.kind_id() == Gleam::FunctionCall
+        node.kind() == "function_call"
     }
 
     fn is_non_arg(_node: &Node) -> bool {
@@ -837,7 +845,7 @@ impl Checker for GleamCode {
     }
 
     fn is_string(node: &Node) -> bool {
-        matches!(node.kind_id().into(), Gleam::String | Gleam::QuotedContent)
+        matches!(node.kind(), "string" | "quoted_content")
     }
 
     fn is_else_if(_node: &Node) -> bool {
@@ -854,7 +862,7 @@ impl Checker for GleamCode {
 // Lua implementation - based on tree-sitter-lua 0.2.0
 impl Checker for LuaCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Lua::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
@@ -864,27 +872,27 @@ impl Checker for LuaCode {
     fn is_func_space(node: &Node) -> bool {
         // Lua function spaces: program (top-level), function declarations, function definitions
         matches!(
-            node.kind_id().into(),
-            Lua::Program | Lua::FunctionDeclaration | Lua::FunctionDefinition | Lua::Function
+            node.kind(),
+            "program" | "function_declaration" | "function_definition" | "function"
         )
     }
 
     fn is_func(node: &Node) -> bool {
         // Lua function declarations and definitions
         matches!(
-            node.kind_id().into(),
-            Lua::FunctionDeclaration | Lua::FunctionDefinition
+            node.kind(),
+            "function_declaration" | "function_definition"
         )
     }
 
     fn is_closure(node: &Node) -> bool {
         // Lua anonymous functions
-        node.kind_id() == Lua::Function
+        node.kind() == "function"
     }
 
     fn is_call(node: &Node) -> bool {
         // Lua function calls
-        node.kind_id() == Lua::FunctionCall
+        node.kind() == "function_call"
     }
 
     fn is_non_arg(_node: &Node) -> bool {
@@ -892,7 +900,7 @@ impl Checker for LuaCode {
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Lua::String
+        node.kind() == "string"
     }
 
     fn is_else_if(_node: &Node) -> bool {
@@ -909,88 +917,110 @@ impl Checker for LuaCode {
     }
 }
 
-// Go language - delegate to Java as fallback
+// Go implementation - based on tree-sitter-go 0.25.0
 impl Checker for GoCode {
     fn is_comment(node: &Node) -> bool {
-        JavaCode::is_comment(node)
+        node.kind() == "comment"
     }
 
-    fn is_useful_comment(node: &Node, code: &[u8]) -> bool {
-        JavaCode::is_useful_comment(node, code)
+    fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
+        false
     }
 
     fn is_func_space(node: &Node) -> bool {
-        JavaCode::is_func_space(node)
+        matches!(
+            node.kind(),
+            "source_file" | "function_declaration" | "method_declaration" | "func_literal"
+        )
     }
 
     fn is_func(node: &Node) -> bool {
-        JavaCode::is_func(node)
+        matches!(node.kind(), "function_declaration" | "method_declaration")
     }
 
     fn is_closure(node: &Node) -> bool {
-        JavaCode::is_closure(node)
+        node.kind() == "func_literal"
     }
 
     fn is_call(node: &Node) -> bool {
-        JavaCode::is_call(node)
+        node.kind() == "call_expression"
     }
 
-    fn is_non_arg(node: &Node) -> bool {
-        JavaCode::is_non_arg(node)
+    fn is_non_arg(_: &Node) -> bool {
+        false
     }
 
     fn is_string(node: &Node) -> bool {
-        JavaCode::is_string(node)
+        matches!(
+            node.kind(),
+            "interpreted_string_literal" | "raw_string_literal"
+        )
     }
 
-    fn is_else_if(node: &Node) -> bool {
-        JavaCode::is_else_if(node)
+    fn is_else_if(_: &Node) -> bool {
+        false
     }
 
-    fn is_primitive(id: u16) -> bool {
-        JavaCode::is_primitive(id)
+    fn is_primitive(_id: u16) -> bool {
+        false
     }
 }
 
-// C# language - delegate to Java as fallback
+// C# implementation - based on tree-sitter-c-sharp 0.23.1
 impl Checker for CsharpCode {
     fn is_comment(node: &Node) -> bool {
-        JavaCode::is_comment(node)
+        node.kind() == "comment"
     }
 
-    fn is_useful_comment(node: &Node, code: &[u8]) -> bool {
-        JavaCode::is_useful_comment(node, code)
+    fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
+        false
     }
 
     fn is_func_space(node: &Node) -> bool {
-        JavaCode::is_func_space(node)
+        matches!(
+            node.kind(),
+            "compilation_unit"
+            | "class_declaration"
+            | "struct_declaration"
+            | "interface_declaration"
+            | "record_declaration"
+        )
     }
 
     fn is_func(node: &Node) -> bool {
-        JavaCode::is_func(node)
+        matches!(
+            node.kind(),
+            "method_declaration" | "constructor_declaration"
+        )
     }
 
     fn is_closure(node: &Node) -> bool {
-        JavaCode::is_closure(node)
+        matches!(
+            node.kind(),
+            "lambda_expression" | "anonymous_method_expression"
+        )
     }
 
     fn is_call(node: &Node) -> bool {
-        JavaCode::is_call(node)
+        node.kind() == "invocation_expression"
     }
 
-    fn is_non_arg(node: &Node) -> bool {
-        JavaCode::is_non_arg(node)
+    fn is_non_arg(_: &Node) -> bool {
+        false
     }
 
     fn is_string(node: &Node) -> bool {
-        JavaCode::is_string(node)
+        matches!(
+            node.kind(),
+            "string_literal" | "interpolated_string_expression"
+        )
     }
 
-    fn is_else_if(node: &Node) -> bool {
-        JavaCode::is_else_if(node)
+    fn is_else_if(_: &Node) -> bool {
+        false
     }
 
-    fn is_primitive(id: u16) -> bool {
-        JavaCode::is_primitive(id)
+    fn is_primitive(_id: u16) -> bool {
+        false
     }
 }

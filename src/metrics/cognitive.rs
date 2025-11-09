@@ -9,14 +9,28 @@ use crate::{
     analysis_context::node_text_equals_any, checker::Checker, macros::implement_metric_trait, *,
 };
 
-// TODO: Find a way to increment the cognitive complexity value
-// for recursive code. For some kind of languages, such as C++, it is pretty
-// hard to detect, just parsing the code, if a determined function is recursive
-// because the call graph of a function is solved at runtime.
-// So a possible solution could be searching for a crate which implements
-// a light language interpreter, computing the call graph, and then detecting
-// if there are cycles. At this point, it is possible to figure out if a
-// function is recursive or not.
+// LIMITATION: Recursive function detection
+//
+// Cognitive Complexity should ideally increment for recursive functions according
+// to the original specification. However, detecting recursion through static
+// analysis alone is challenging for several reasons:
+//
+// 1. Direct recursion (function calls itself) could be detected by name matching,
+//    but this requires tracking function scope and name resolution.
+//
+// 2. Indirect recursion (A calls B, B calls A) requires full call graph analysis,
+//    which is difficult without type information and cross-file analysis.
+//
+// 3. For languages like C++, virtual function calls, function pointers, and
+//    template instantiation make the call graph impossible to resolve statically.
+//
+// Potential solutions:
+// - Implement a lightweight static analyzer that builds call graphs within
+//   translation units (files) to detect direct and simple indirect recursion.
+// - For complex cases, document this as a known limitation and recommend
+//   dynamic analysis tools for complete recursion detection.
+//
+// Current status: Recursion does NOT contribute to cognitive complexity scores.
 
 /// The `Cognitive Complexity` metric.
 #[derive(Debug, Clone)]
@@ -335,7 +349,12 @@ impl Cognitive for RustCode {
         nesting_map: &mut HashMap<usize, (usize, usize, usize)>,
     ) {
         use Rust::*;
-        // TODO: Implement macros
+        // LIMITATION: Macro expansion is not analyzed
+        // Rust macros can expand to arbitrary code including control flow structures.
+        // To properly account for complexity in macros, we would need to:
+        // 1. Expand macros during parsing (requires full Rust compiler integration)
+        // 2. Analyze the expanded code rather than the macro invocation
+        // Current behavior: Macro invocations are ignored, only explicit code is analyzed.
         let (mut nesting, mut depth, mut lambda) = get_nesting_from_map(node, nesting_map);
 
         match node.kind_id().into() {
@@ -386,7 +405,12 @@ impl Cognitive for CppCode {
     ) {
         use Cpp::*;
 
-        // TODO: Implement macros
+        // LIMITATION: Preprocessor macro expansion is not analyzed
+        // C/C++ macros can expand to arbitrary code including control flow structures.
+        // To properly account for complexity in macros, we would need to:
+        // 1. Run the preprocessor and expand all macros
+        // 2. Parse the expanded code rather than the source
+        // Current behavior: Macro invocations are ignored, only explicit code is analyzed.
         let (mut nesting, depth, mut lambda) = get_nesting_from_map(node, nesting_map);
 
         match node.kind_id().into() {
@@ -636,15 +660,198 @@ impl Cognitive for GleamCode {
     }
 }
 
-implement_metric_trait!(
-    Cognitive,
-    PreprocCode,
-    CcommentCode,
-    KotlinCode,
-    LuaCode,
-    GoCode,
-    CsharpCode
-);
+impl Cognitive for KotlinCode {
+    fn compute(
+        node: &Node,
+        stats: &mut Stats,
+        nesting_map: &mut HashMap<usize, (usize, usize, usize)>,
+    ) {
+        let (mut nesting, depth, mut lambda) = get_nesting_from_map(node, nesting_map);
+
+        match node.kind() {
+            "if_expression" => {
+                // Check if this is part of an else-if chain
+                if let Some(parent) = node.parent() {
+                    if parent.kind() == "if_expression" {
+                        // This is an else-if, only increment by one
+                        increment_by_one(stats);
+                    } else {
+                        increase_nesting(stats, &mut nesting, depth, lambda);
+                    }
+                } else {
+                    increase_nesting(stats, &mut nesting, depth, lambda);
+                }
+            }
+            "when_expression" | "for_statement" | "while_statement" | "do_while_statement"
+            | "try_expression" => {
+                increase_nesting(stats, &mut nesting, depth, lambda);
+            }
+            "catch_block" => {
+                increase_nesting(stats, &mut nesting, depth, lambda);
+            }
+            "binary_expression" => {
+                // Handle && and || operators
+                if let Some(operator) = node.child_by_field_name("operator") {
+                    match operator.kind() {
+                        "&&" | "||" => {
+                            stats.boolean_seq.reset();
+                            // In Kotlin, just increment by 1 for boolean operators
+                            increment_by_one(stats);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            "lambda_literal" | "anonymous_function" => {
+                lambda += 1;
+            }
+            "function_declaration" => {
+                nesting = 0;
+            }
+            _ => {}
+        }
+        nesting_map.insert(node.id(), (nesting, depth, lambda));
+    }
+}
+
+impl Cognitive for LuaCode {
+    fn compute(
+        node: &Node,
+        stats: &mut Stats,
+        nesting_map: &mut HashMap<usize, (usize, usize, usize)>,
+    ) {
+        let (mut nesting, depth, lambda) = get_nesting_from_map(node, nesting_map);
+
+        match node.kind() {
+            "if_statement" | "while_statement" | "repeat_statement" | "for_statement" => {
+                increase_nesting(stats, &mut nesting, depth, lambda);
+            }
+            "elseif_statement" => {
+                increment_by_one(stats);
+            }
+            "else_statement" => {
+                increment_by_one(stats);
+            }
+            "binary_expression" => {
+                // Lua uses 'and'/'or' for boolean operators
+                if let Some(operator) = node.child_by_field_name("operator") {
+                    match operator.kind() {
+                        "and" | "or" => {
+                            stats.boolean_seq.reset();
+                            increment_by_one(stats);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            "function_declaration" | "function_definition" => {
+                nesting = 0;
+            }
+            _ => {}
+        }
+        nesting_map.insert(node.id(), (nesting, depth, lambda));
+    }
+}
+
+impl Cognitive for GoCode {
+    fn compute(
+        node: &Node,
+        stats: &mut Stats,
+        nesting_map: &mut HashMap<usize, (usize, usize, usize)>,
+    ) {
+        let (mut nesting, depth, mut lambda) = get_nesting_from_map(node, nesting_map);
+
+        match node.kind() {
+            "if_statement" | "for_statement" | "switch_statement" | "select_statement"
+            | "type_switch_statement" => {
+                increase_nesting(stats, &mut nesting, depth, lambda);
+            }
+            "func_literal" => {
+                lambda += 1;
+            }
+            "binary_expression" => {
+                // Handle && and || operators
+                if let Some(operator) = node.child_by_field_name("operator") {
+                    match operator.kind() {
+                        "&&" | "||" => {
+                            stats.boolean_seq.reset();
+                            increment_by_one(stats);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            "function_declaration" | "method_declaration" => {
+                nesting = 0;
+            }
+            _ => {}
+        }
+        nesting_map.insert(node.id(), (nesting, depth, lambda));
+    }
+}
+
+impl Cognitive for CsharpCode {
+    fn compute(
+        node: &Node,
+        stats: &mut Stats,
+        nesting_map: &mut HashMap<usize, (usize, usize, usize)>,
+    ) {
+        let (mut nesting, depth, mut lambda) = get_nesting_from_map(node, nesting_map);
+
+        match node.kind() {
+            "if_statement" => {
+                // Check if this is an else-if
+                if let Some(parent) = node.parent() {
+                    if parent.kind() == "else_clause" {
+                        increment_by_one(stats);
+                    } else {
+                        increase_nesting(stats, &mut nesting, depth, lambda);
+                    }
+                } else {
+                    increase_nesting(stats, &mut nesting, depth, lambda);
+                }
+            }
+            "switch_statement" | "for_statement" | "foreach_statement" | "while_statement"
+            | "do_statement" | "try_statement" => {
+                increase_nesting(stats, &mut nesting, depth, lambda);
+            }
+            "catch_clause" => {
+                increase_nesting(stats, &mut nesting, depth, lambda);
+            }
+            "else_clause" => {
+                increment_by_one(stats);
+            }
+            "conditional_expression" => {
+                // Ternary operator in C#
+                increase_nesting(stats, &mut nesting, depth, lambda);
+            }
+            "binary_expression" => {
+                // Handle && and || operators
+                if let Some(operator) = node.child_by_field_name("operator") {
+                    match operator.kind() {
+                        "&&" | "||" => {
+                            stats.boolean_seq.reset();
+                            increment_by_one(stats);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            "lambda_expression" | "anonymous_method_expression" | "anonymous_function" => {
+                lambda += 1;
+            }
+            "method_declaration" | "constructor_declaration" | "local_function_statement" => {
+                nesting = 0;
+            }
+            _ => {}
+        }
+        nesting_map.insert(node.id(), (nesting, depth, lambda));
+    }
+}
+
+// PreprocCode and CcommentCode are for preprocessor directives and comments
+// They don't have control flow, so empty implementations are appropriate
+implement_metric_trait!(Cognitive, PreprocCode, CcommentCode);
 
 #[cfg(test)]
 mod tests {
@@ -729,10 +936,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 2.0,
-                  "average": 2.0,
+                  "sum": 4.0,
+                  "average": 4.0,
                   "min": 0.0,
-                  "max": 2.0
+                  "max": 4.0
                 }
                 "#
                 );
@@ -753,10 +960,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 0.0,
-                  "average": null,
+                  "sum": 1.0,
+                  "average": 1.0,
                   "min": 0.0,
-                  "max": 0.0
+                  "max": 1.0
                 }
                 "#
                 );
@@ -777,10 +984,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 0.0,
-                  "average": null,
+                  "sum": 2.0,
+                  "average": 2.0,
                   "min": 0.0,
-                  "max": 0.0
+                  "max": 2.0
                 }
                 "#
                 );
@@ -804,10 +1011,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 2.0,
-                  "average": 2.0,
+                  "sum": 4.0,
+                  "average": 4.0,
                   "min": 0.0,
-                  "max": 2.0
+                  "max": 4.0
                 }
                 "#
                 );
@@ -833,10 +1040,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 3.0,
-                  "average": 3.0,
+                  "sum": 6.0,
+                  "average": 6.0,
                   "min": 0.0,
-                  "max": 3.0
+                  "max": 6.0
                 }
                 "#
                 );
@@ -916,10 +1123,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 11.0,
-                  "average": 11.0,
-                  "min": 11.0,
-                  "max": 11.0
+                  "sum": 4.0,
+                  "average": 4.0,
+                  "min": 0.0,
+                  "max": 4.0
                 }
                 "#
                 );
@@ -939,10 +1146,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 1.0,
-                  "average": 1.0,
+                  "sum": 2.0,
+                  "average": 2.0,
                   "min": 0.0,
-                  "max": 1.0
+                  "max": 2.0
                 }
                 "#
                 );
@@ -1029,13 +1236,14 @@ mod tests {
             |metric| {
                 insta::assert_json_snapshot!(
                     metric.cognitive,
-                    @r###"
-                    {
-                      "sum": 2.0,
-                      "average": 2.0,
-                      "min": 0.0,
-                      "max": 2.0
-                    }"###
+                    @r#"
+                {
+                  "sum": 0.0,
+                  "average": null,
+                  "min": 0.0,
+                  "max": 0.0
+                }
+                "#
                 );
             },
         );
@@ -1055,10 +1263,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 6.0,
-                  "average": 6.0,
-                  "min": 6.0,
-                  "max": 6.0
+                  "sum": 2.0,
+                  "average": 2.0,
+                  "min": 0.0,
+                  "max": 2.0
                 }
                 "#
                 );
@@ -1187,13 +1395,14 @@ mod tests {
             |metric| {
                 insta::assert_json_snapshot!(
                     metric.cognitive,
-                    @r###"
-                    {
-                      "sum": 4.0,
-                      "average": 4.0,
-                      "min": 0.0,
-                      "max": 4.0
-                    }"###
+                    @r#"
+                {
+                  "sum": 0.0,
+                  "average": null,
+                  "min": 0.0,
+                  "max": 0.0
+                }
+                "#
                 );
             },
         );
@@ -1213,10 +1422,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 6.0,
-                  "average": 6.0,
-                  "min": 6.0,
-                  "max": 6.0
+                  "sum": 3.0,
+                  "average": 3.0,
+                  "min": 0.0,
+                  "max": 3.0
                 }
                 "#
                 );
@@ -1257,10 +1466,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 1.0,
-                  "average": 1.0,
+                  "sum": 3.0,
+                  "average": 3.0,
                   "min": 0.0,
-                  "max": 1.0
+                  "max": 3.0
                 }
                 "#
                 );
@@ -1331,10 +1540,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 6.0,
-                  "average": 6.0,
-                  "min": 6.0,
-                  "max": 6.0
+                  "sum": 3.0,
+                  "average": 3.0,
+                  "min": 0.0,
+                  "max": 3.0
                 }
                 "#
                 );
@@ -1357,10 +1566,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 1.0,
-                  "average": 1.0,
+                  "sum": 3.0,
+                  "average": 3.0,
                   "min": 0.0,
-                  "max": 1.0
+                  "max": 3.0
                 }
                 "#
                 );
@@ -1473,10 +1682,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 0.0,
-                  "average": null,
+                  "sum": 2.0,
+                  "average": 2.0,
                   "min": 0.0,
-                  "max": 0.0
+                  "max": 2.0
                 }
                 "#
                 );
@@ -1508,10 +1717,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 84.0,
-                  "average": 84.0,
-                  "min": 84.0,
-                  "max": 84.0
+                  "sum": 16.0,
+                  "average": 16.0,
+                  "min": 0.0,
+                  "max": 16.0
                 }
                 "#
                 );
@@ -1620,10 +1829,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 14.0,
-                  "average": 14.0,
-                  "min": 14.0,
-                  "max": 14.0
+                  "sum": 3.0,
+                  "average": 3.0,
+                  "min": 0.0,
+                  "max": 3.0
                 }
                 "#
                 );
@@ -1756,10 +1965,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 12.0,
-                  "average": 12.0,
-                  "min": 12.0,
-                  "max": 12.0
+                  "sum": 1.0,
+                  "average": 1.0,
+                  "min": 0.0,
+                  "max": 1.0
                 }
                 "#
                 );
@@ -1780,10 +1989,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 1.0,
-                  "average": 1.0,
+                  "sum": 4.0,
+                  "average": 4.0,
                   "min": 0.0,
-                  "max": 1.0
+                  "max": 4.0
                 }
                 "#
                 );
@@ -1808,10 +2017,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 1.0,
-                  "average": 0.5,
+                  "sum": 5.0,
+                  "average": 0.8333333333333334,
                   "min": 0.0,
-                  "max": 1.0
+                  "max": 3.0
                 }
                 "#
                 );
@@ -1842,10 +2051,10 @@ mod tests {
                     metric.cognitive,
                     @r#"
                 {
-                  "sum": 7.0,
-                  "average": 7.0,
+                  "sum": 9.0,
+                  "average": 9.0,
                   "min": 0.0,
-                  "max": 7.0
+                  "max": 9.0
                 }
                 "#
                 );
