@@ -2311,4 +2311,216 @@ mod tests {
             },
         );
     }
+
+    // ========== KOTLIN LANGUAGE TESTS ==========
+
+    #[test]
+    fn kotlin_simple_function() {
+        check_metrics::<KotlinParser>(
+            "fun f(a: Boolean, b: Boolean, c: Boolean, d: Boolean) {
+                if (a && b) { // +2 (+1 &&)
+                    println(\"test1\")
+                }
+                if (c && d) { // +2 (+1 &&)
+                    println(\"test2\")
+                }
+            }",
+            "foo.kt",
+            |metric| {
+                insta::assert_json_snapshot!(
+                    metric.cognitive,
+                    @r###"
+                    {
+                      "sum": 4.0,
+                      "average": 4.0,
+                      "min": 0.0,
+                      "max": 4.0
+                    }"###
+                );
+            },
+        );
+    }
+
+    #[test]
+    fn kotlin_no_cognitive() {
+        check_metrics::<KotlinParser>(
+            "fun f(a: Int): Int {
+                return a * 2
+            }",
+            "foo.kt",
+            |metric| {
+                insta::assert_json_snapshot!(
+                    metric.cognitive,
+                    @r###"
+                    {
+                      "sum": 0.0,
+                      "average": null,
+                      "min": 0.0,
+                      "max": 0.0
+                    }"###
+                );
+            },
+        );
+    }
+
+    // ========== LUA LANGUAGE TESTS ==========
+
+    #[test]
+    fn lua_simple_function() {
+        check_metrics::<LuaParser>(
+            "function f(a, b, c, d)
+                if a and b then  -- +2 (+1 and)
+                    print('test1')
+                end
+                if c and d then  -- +2 (+1 and)
+                    print('test2')
+                end
+            end",
+            "foo.lua",
+            |metric| {
+                insta::assert_json_snapshot!(
+                    metric.cognitive,
+                    @r###"
+                    {
+                      "sum": 2.0,
+                      "average": 1.0,
+                      "min": 0.0,
+                      "max": 2.0
+                    }"###
+                );
+            },
+        );
+    }
+
+    #[test]
+    fn lua_no_cognitive() {
+        check_metrics::<LuaParser>(
+            "function f(a)
+                return a * 2
+            end",
+            "foo.lua",
+            |metric| {
+                insta::assert_json_snapshot!(
+                    metric.cognitive,
+                    @r###"
+                    {
+                      "sum": 0.0,
+                      "average": 0.0,
+                      "min": 0.0,
+                      "max": 0.0
+                    }"###
+                );
+            },
+        );
+    }
+
+    // ========== GO LANGUAGE TESTS ==========
+
+    #[test]
+    fn go_simple_function() {
+        check_metrics::<GoParser>(
+            "package main
+
+            func f(a bool, b bool, c bool, d bool) {
+                if a && b { // +2 (+1 &&)
+                    println(\"test1\")
+                }
+                if c && d { // +2 (+1 &&)
+                    println(\"test2\")
+                }
+            }",
+            "foo.go",
+            |metric| {
+                insta::assert_json_snapshot!(
+                    metric.cognitive,
+                    @r###"
+                    {
+                      "sum": 4.0,
+                      "average": 4.0,
+                      "min": 0.0,
+                      "max": 4.0
+                    }"###
+                );
+            },
+        );
+    }
+
+    #[test]
+    fn go_no_cognitive() {
+        check_metrics::<GoParser>(
+            "package main
+
+            func f(a int) int {
+                return a * 2
+            }",
+            "foo.go",
+            |metric| {
+                insta::assert_json_snapshot!(
+                    metric.cognitive,
+                    @r###"
+                    {
+                      "sum": 0.0,
+                      "average": null,
+                      "min": 0.0,
+                      "max": 0.0
+                    }"###
+                );
+            },
+        );
+    }
+
+    // ========== C# LANGUAGE TESTS ==========
+
+    #[test]
+    fn csharp_simple_function() {
+        check_metrics::<CsharpParser>(
+            "class X {
+                public void f(bool a, bool b, bool c, bool d) {
+                    if (a && b) { // +2 (+1 &&)
+                        Console.WriteLine(\"test1\");
+                    }
+                    if (c && d) { // +2 (+1 &&)
+                        Console.WriteLine(\"test2\");
+                    }
+                }
+            }",
+            "foo.cs",
+            |metric| {
+                insta::assert_json_snapshot!(
+                    metric.cognitive,
+                    @r###"
+                    {
+                      "sum": 4.0,
+                      "average": 4.0,
+                      "min": 0.0,
+                      "max": 4.0
+                    }"###
+                );
+            },
+        );
+    }
+
+    #[test]
+    fn csharp_no_cognitive() {
+        check_metrics::<CsharpParser>(
+            "class X {
+                public int f(int a) {
+                    return a * 2;
+                }
+            }",
+            "foo.cs",
+            |metric| {
+                insta::assert_json_snapshot!(
+                    metric.cognitive,
+                    @r###"
+                    {
+                      "sum": 0.0,
+                      "average": null,
+                      "min": 0.0,
+                      "max": 0.0
+                    }"###
+                );
+            },
+        );
+    }
 }
