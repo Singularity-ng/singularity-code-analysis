@@ -232,7 +232,7 @@ impl Checker for CppCode {
 
 impl Checker for PythonCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Python::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(node: &Node, code: &[u8]) -> bool {
@@ -247,32 +247,29 @@ impl Checker for PythonCode {
 
     fn is_func_space(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Python::Module | Python::FunctionDefinition | Python::ClassDefinition
+            node.kind(),
+            "module" | "function_definition" | "class_definition"
         )
     }
 
     fn is_func(node: &Node) -> bool {
-        node.kind_id() == Python::FunctionDefinition
+        node.kind() == "function_definition"
     }
 
     fn is_closure(node: &Node) -> bool {
-        node.kind_id() == Python::Lambda
+        node.kind() == "lambda"
     }
 
     fn is_call(node: &Node) -> bool {
-        node.kind_id() == Python::Call
+        node.kind() == "call"
     }
 
     fn is_non_arg(node: &Node) -> bool {
-        matches!(
-            node.kind_id().into(),
-            Python::LPAREN | Python::COMMA | Python::RPAREN
-        )
+        matches!(node.kind(), "(" | "," | ")")
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Python::String || node.kind_id() == Python::ConcatenatedString
+        node.kind() == "string" || node.kind() == "concatenated_string"
     }
 
     fn is_else_if(_: &Node) -> bool {

@@ -52,41 +52,34 @@ pub trait Getter {
 
 impl Getter for PythonCode {
     fn get_space_kind(node: &Node) -> SpaceKind {
-        match node.kind_id().into() {
-            Python::FunctionDefinition => SpaceKind::Function,
-            Python::ClassDefinition => SpaceKind::Class,
-            Python::Module => SpaceKind::Unit,
+        match node.kind() {
+            "function_definition" => SpaceKind::Function,
+            "class_definition" => SpaceKind::Class,
+            "module" => SpaceKind::Unit,
             _ => SpaceKind::Unknown,
         }
     }
 
     fn get_op_type(node: &Node) -> HalsteadType {
-        use Python::{
-            And, As, Assert, Async, Await, Await2, Break, Continue, Def, Del, Elif, Else, Except,
-            Exec, ExpressionStatement, False, Finally, Float, For, From, Global, Identifier, If,
-            Import, In, Integer, Is, None, Not, Or, Pass, Print, Raise, Return, String, True, Try,
-            While, With, Yield, AMP, AMPEQ, AT, ATEQ, BANGEQ, CARET, CARETEQ, COLONEQ, COMMA, DASH,
-            DASHEQ, DASHGT, DOT, EQ, EQEQ, GT, GTEQ, GTGT, GTGTEQ, LT, LTEQ, LTGT, LTLT, LTLTEQ,
-            PERCENT, PERCENTEQ, PIPE, PIPEEQ, PLUS, PLUSEQ, SLASH, SLASHEQ, SLASHSLASH,
-            SLASHSLASHEQ, STAR, STAREQ, STARSTAR, STARSTAREQ, TILDE,
-        };
-
-        match node.kind_id().into() {
-            Import | DOT | From | COMMA | As | STAR | GTGT | Assert | COLONEQ | Return | Def
-            | Del | Raise | Pass | Break | Continue | If | Elif | Else | Async | For | In
-            | While | Try | Except | Finally | With | DASHGT | EQ | Global | Exec | AT | Not
-            | And | Or | PLUS | DASH | SLASH | PERCENT | SLASHSLASH | STARSTAR | PIPE | AMP
-            | CARET | LTLT | TILDE | LT | LTEQ | EQEQ | BANGEQ | GTEQ | GT | LTGT | Is | PLUSEQ
-            | DASHEQ | STAREQ | SLASHEQ | ATEQ | SLASHSLASHEQ | PERCENTEQ | STARSTAREQ | GTGTEQ
-            | LTLTEQ | AMPEQ | CARETEQ | PIPEEQ | Yield | Await | Await2 | Print => {
+        match node.kind() {
+            "import_statement" | "import_from_statement" | "." | "," | "as" | "*" | ">>" 
+            | "assert_statement" | ":=" | "return_statement" | "def" | "del_statement"
+            | "raise_statement" | "pass_statement" | "break_statement" | "continue_statement"
+            | "if_statement" | "elif_clause" | "else_clause" | "async" | "for_statement"
+            | "in" | "while_statement" | "try_statement" | "except_clause" | "finally_clause"
+            | "with_statement" | "->" | "=" | "global_statement" | "exec_statement" | "@"
+            | "not" | "and" | "or" | "+" | "-" | "/" | "%" | "//" | "**" | "|" | "&"
+            | "^" | "<<" | "~" | "<" | "<=" | "==" | "!=" | ">=" | ">" | "<>" | "is"
+            | "+=" | "-=" | "*=" | "/=" | "@=" | "//=" | "%=" | "**=" | ">>=" | "<<="
+            | "&=" | "^=" | "|=" | "yield" | "await" | "print_statement" => {
                 HalsteadType::Operator
             }
-            Identifier | Integer | Float | True | False | None => HalsteadType::Operand,
-            String => {
+            "identifier" | "integer" | "float" | "true" | "false" | "none" => HalsteadType::Operand,
+            "string" => {
                 let mut operator = HalsteadType::Unknown;
                 // check if we've a documentation string or a multiline comment
                 if let Some(parent) = node.parent() {
-                    if parent.kind_id() != ExpressionStatement || parent.child_count() != 1 {
+                    if parent.kind() != "expression_statement" || parent.child_count() != 1 {
                         operator = HalsteadType::Operand;
                     }
                 }
