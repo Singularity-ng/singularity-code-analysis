@@ -385,7 +385,7 @@ impl Checker for MozjsCode {
 
 impl Checker for JavascriptCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Javascript::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
@@ -394,44 +394,41 @@ impl Checker for JavascriptCode {
 
     fn is_func_space(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Javascript::Program
-                | Javascript::FunctionExpression
-                | Javascript::Class
-                | Javascript::GeneratorFunction
-                | Javascript::FunctionDeclaration
-                | Javascript::MethodDefinition
-                | Javascript::GeneratorFunctionDeclaration
-                | Javascript::ClassDeclaration
-                | Javascript::ArrowFunction
+            node.kind(),
+            "program"
+                | "function_expression"
+                | "class"
+                | "generator_function"
+                | "function_declaration"
+                | "method_definition"
+                | "generator_function_declaration"
+                | "class_declaration"
+                | "arrow_function"
         )
     }
 
     is_js_func_and_closure_checker!(JavascriptParser, Javascript);
 
     fn is_call(node: &Node) -> bool {
-        node.kind_id() == Javascript::CallExpression
+        node.kind() == "call_expression"
     }
 
     fn is_non_arg(node: &Node) -> bool {
-        matches!(
-            node.kind_id().into(),
-            Javascript::LPAREN | Javascript::COMMA | Javascript::RPAREN
-        )
+        matches!(node.kind(), "(" | "," | ")")
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Javascript::String || node.kind_id() == Javascript::TemplateString
+        node.kind() == "string" || node.kind() == "template_string"
     }
 
     #[inline(always)]
     fn is_else_if(node: &Node) -> bool {
-        if node.kind_id() != Javascript::IfStatement {
+        if node.kind() != "if_statement" {
             return false;
         }
         if let Some(parent) = node.parent() {
-            return node.kind_id() == Javascript::IfStatement
-                && parent.kind_id() == Javascript::IfStatement;
+            return node.kind() == "if_statement"
+                && parent.kind() == "if_statement";
         }
         false
     }
@@ -443,7 +440,7 @@ impl Checker for JavascriptCode {
 
 impl Checker for TypescriptCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Typescript::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
@@ -452,44 +449,41 @@ impl Checker for TypescriptCode {
 
     fn is_func_space(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Typescript::Program
-                | Typescript::FunctionExpression
-                | Typescript::Class
-                | Typescript::GeneratorFunction
-                | Typescript::FunctionDeclaration
-                | Typescript::MethodDefinition
-                | Typescript::GeneratorFunctionDeclaration
-                | Typescript::ClassDeclaration
-                | Typescript::InterfaceDeclaration
-                | Typescript::ArrowFunction
+            node.kind(),
+            "program"
+                | "function_expression"
+                | "class"
+                | "generator_function"
+                | "function_declaration"
+                | "method_definition"
+                | "generator_function_declaration"
+                | "class_declaration"
+                | "interface_declaration"
+                | "arrow_function"
         )
     }
 
     is_js_func_and_closure_checker!(TypescriptParser, Typescript);
 
     fn is_call(node: &Node) -> bool {
-        node.kind_id() == Typescript::CallExpression
+        node.kind() == "call_expression"
     }
 
     fn is_non_arg(node: &Node) -> bool {
-        matches!(
-            node.kind_id().into(),
-            Typescript::LPAREN | Typescript::COMMA | Typescript::RPAREN
-        )
+        matches!(node.kind(), "(" | "," | ")")
     }
 
     fn is_string(node: &Node) -> bool {
-        node.kind_id() == Typescript::String || node.kind_id() == Typescript::TemplateString
+        node.kind() == "string" || node.kind() == "template_string"
     }
 
     #[inline(always)]
     fn is_else_if(node: &Node) -> bool {
-        if node.kind_id() != Typescript::IfStatement {
+        if node.kind() != "if_statement" {
             return false;
         }
         if let Some(parent) = node.parent() {
-            return parent.kind_id() == Typescript::ElseClause;
+            return parent.kind() == "else_clause";
         }
         false
     }
