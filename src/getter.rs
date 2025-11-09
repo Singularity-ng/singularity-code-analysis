@@ -536,7 +536,48 @@ impl Getter for JavaCode {
     }
 }
 
-impl Getter for KotlinCode {}
+impl Getter for KotlinCode {
+    fn get_space_kind(node: &Node) -> SpaceKind {
+        match node.kind() {
+            "source_file" => SpaceKind::Unit,
+            "class_declaration" => SpaceKind::Class,
+            "function_declaration" | "lambda_literal" | "anonymous_function" => SpaceKind::Function,
+            _ => SpaceKind::Unknown,
+        }
+    }
+
+    fn get_op_type(node: &Node) -> HalsteadType {
+        match node.kind() {
+            // Keywords and control flow
+            "if" | "else" | "when" | "for" | "while" | "do" | "return" | "break" | "continue"
+            | "throw" | "try" | "catch" | "finally" | "class" | "fun" | "val" | "var"
+            | "in" | "is" | "as" | "object" | "companion" | "init" | "this" | "super"
+            // Operators
+            | "=" | "+" | "-" | "*" | "/" | "%" | "++" | "--" | "==" | "!=" | "<" | ">"
+            | "<=" | ">=" | "&&" | "||" | "!" | "&" | "|" | "^" | "<<" | ">>" | ">>>"
+            | "+=" | "-=" | "*=" | "/=" | "%=" | ".." | "?:" | "?." | "!!" | "::"
+            // Delimiters
+            | "(" | "[" | "{" | "," | ";" | "." | "->" | "=>"
+            => HalsteadType::Operator,
+            // Operands
+            "identifier" | "string_literal" | "multiline_string_literal" | "integer_literal"
+            | "real_literal" | "boolean_literal" | "character_literal" | "null_literal"
+            => HalsteadType::Operand,
+            _ => HalsteadType::Unknown,
+        }
+    }
+
+    fn get_operator_id_as_str(id: u16) -> &'static str {
+        let language: tree_sitter::Language = tree_sitter_kotlin_ng::LANGUAGE.into();
+        match language.node_kind_for_id(id) {
+            Some("(") => "()",
+            Some("[") => "[]",
+            Some("{") => "{}",
+            Some(kind) => kind,
+            None => "unknown",
+        }
+    }
+}
 
 // BEAM languages - Elixir, Erlang, Gleam (full implementations)
 impl Getter for ElixirCode {
@@ -785,9 +826,139 @@ impl Getter for GleamCode {
     }
 }
 
-// Lua (minimal implementation)
-impl Getter for LuaCode {}
+// Lua implementation
+impl Getter for LuaCode {
+    fn get_space_kind(node: &Node) -> SpaceKind {
+        match node.kind() {
+            "program" => SpaceKind::Unit,
+            "function_declaration" | "function_definition" | "function" => SpaceKind::Function,
+            _ => SpaceKind::Unknown,
+        }
+    }
 
-// Compatibility implementations for unimplemented languages
-impl Getter for GoCode {}
-impl Getter for CsharpCode {}
+    fn get_op_type(node: &Node) -> HalsteadType {
+        match node.kind() {
+            // Keywords and control flow
+            "if" | "then" | "else" | "elseif" | "end" | "for" | "while" | "do" | "repeat"
+            | "until" | "return" | "break" | "goto" | "in" | "local" | "function"
+            | "and" | "or" | "not"
+            // Operators
+            | "=" | "+" | "-" | "*" | "/" | "%" | "^" | "#" | "==" | "~=" | "<" | ">"
+            | "<=" | ">=" | ".." | "." | ":"
+            // Delimiters
+            | "(" | "[" | "{" | "," | ";"
+            => HalsteadType::Operator,
+            // Operands
+            "identifier" | "string" | "number" | "nil" | "true" | "false"
+            => HalsteadType::Operand,
+            _ => HalsteadType::Unknown,
+        }
+    }
+
+    fn get_operator_id_as_str(id: u16) -> &'static str {
+        let language: tree_sitter::Language = tree_sitter_lua::LANGUAGE.into();
+        match language.node_kind_for_id(id) {
+            Some("(") => "()",
+            Some("[") => "[]",
+            Some("{") => "{}",
+            Some(kind) => kind,
+            None => "unknown",
+        }
+    }
+}
+
+// Go implementation
+impl Getter for GoCode {
+    fn get_space_kind(node: &Node) -> SpaceKind {
+        match node.kind() {
+            "source_file" => SpaceKind::Unit,
+            "function_declaration" | "method_declaration" | "func_literal" => SpaceKind::Function,
+            _ => SpaceKind::Unknown,
+        }
+    }
+
+    fn get_op_type(node: &Node) -> HalsteadType {
+        match node.kind() {
+            // Keywords and control flow
+            "if" | "else" | "for" | "switch" | "case" | "default" | "return" | "break"
+            | "continue" | "goto" | "fallthrough" | "select" | "defer" | "go" | "type"
+            | "struct" | "interface" | "map" | "chan" | "func" | "var" | "const" | "package"
+            | "import" | "range"
+            // Operators
+            | "=" | "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" | "<<" | ">>" | "&^"
+            | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "&^="
+            | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||" | "!" | "<-" | "++" | "--"
+            | ":=" | "..."
+            // Delimiters
+            | "(" | "[" | "{" | "," | ";" | "." | ":"
+            => HalsteadType::Operator,
+            // Operands
+            "identifier" | "interpreted_string_literal" | "raw_string_literal"
+            | "int_literal" | "float_literal" | "imaginary_literal" | "rune_literal"
+            | "nil" | "true" | "false" | "iota"
+            => HalsteadType::Operand,
+            _ => HalsteadType::Unknown,
+        }
+    }
+
+    fn get_operator_id_as_str(id: u16) -> &'static str {
+        let language: tree_sitter::Language = tree_sitter_go::LANGUAGE.into();
+        match language.node_kind_for_id(id) {
+            Some("(") => "()",
+            Some("[") => "[]",
+            Some("{") => "{}",
+            Some(kind) => kind,
+            None => "unknown",
+        }
+    }
+}
+
+// C# implementation
+impl Getter for CsharpCode {
+    fn get_space_kind(node: &Node) -> SpaceKind {
+        match node.kind() {
+            "compilation_unit" => SpaceKind::Unit,
+            "class_declaration" | "struct_declaration" | "record_declaration" => SpaceKind::Class,
+            "interface_declaration" => SpaceKind::Interface,
+            "method_declaration" | "constructor_declaration" | "lambda_expression"
+            | "anonymous_method_expression" => SpaceKind::Function,
+            _ => SpaceKind::Unknown,
+        }
+    }
+
+    fn get_op_type(node: &Node) -> HalsteadType {
+        match node.kind() {
+            // Keywords and control flow
+            "if" | "else" | "switch" | "case" | "default" | "for" | "foreach" | "while"
+            | "do" | "return" | "break" | "continue" | "goto" | "throw" | "try" | "catch"
+            | "finally" | "yield" | "await" | "async" | "lock" | "using" | "new" | "typeof"
+            | "sizeof" | "nameof" | "is" | "as" | "var" | "class" | "struct" | "interface"
+            | "enum" | "delegate" | "this" | "base" | "null" | "in" | "out" | "ref" | "params"
+            // Operators
+            | "=" | "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" | "<<" | ">>" | ">>>"
+            | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | ">>>="
+            | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||" | "!" | "~" | "++" | "--"
+            | "??" | "?" | "?." | "=>" | "::"
+            // Delimiters
+            | "(" | "[" | "{" | "," | ";" | "." | ":" | "->"
+            => HalsteadType::Operator,
+            // Operands
+            "identifier" | "string_literal" | "interpolated_string_expression"
+            | "integer_literal" | "real_literal" | "character_literal" | "boolean_literal"
+            | "null_literal" | "verbatim_string_literal"
+            => HalsteadType::Operand,
+            _ => HalsteadType::Unknown,
+        }
+    }
+
+    fn get_operator_id_as_str(id: u16) -> &'static str {
+        let language: tree_sitter::Language = tree_sitter_c_sharp::LANGUAGE.into();
+        match language.node_kind_for_id(id) {
+            Some("(") => "()",
+            Some("[") => "[]",
+            Some("{") => "{}",
+            Some(kind) => kind,
+            None => "unknown",
+        }
+    }
+}
