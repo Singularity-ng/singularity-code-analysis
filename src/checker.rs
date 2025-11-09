@@ -613,37 +613,48 @@ impl Checker for RustCode {
     }
 }
 
+// Kotlin implementation - based on tree-sitter-kotlin (currently disabled due to API differences)
 impl Checker for KotlinCode {
-    fn is_comment(_: &Node) -> bool {
-        false
+    fn is_comment(node: &Node) -> bool {
+        matches!(node.kind(), "line_comment" | "block_comment")
     }
 
     fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
         false
     }
 
-    fn is_func_space(_: &Node) -> bool {
-        false
+    fn is_func_space(node: &Node) -> bool {
+        matches!(
+            node.kind(),
+            "source_file"
+            | "class_declaration"
+            | "function_declaration"
+            | "lambda_literal"
+            | "anonymous_function"
+        )
     }
 
-    fn is_func(_: &Node) -> bool {
-        false
+    fn is_func(node: &Node) -> bool {
+        node.kind() == "function_declaration"
     }
 
-    fn is_closure(_: &Node) -> bool {
-        false
+    fn is_closure(node: &Node) -> bool {
+        matches!(node.kind(), "lambda_literal" | "anonymous_function")
     }
 
-    fn is_call(_: &Node) -> bool {
-        false
+    fn is_call(node: &Node) -> bool {
+        node.kind() == "call_expression"
     }
 
     fn is_non_arg(_: &Node) -> bool {
         false
     }
 
-    fn is_string(_: &Node) -> bool {
-        false
+    fn is_string(node: &Node) -> bool {
+        matches!(
+            node.kind(),
+            "string_literal" | "multiline_string_literal"
+        )
     }
 
     fn is_else_if(_: &Node) -> bool {
@@ -906,88 +917,110 @@ impl Checker for LuaCode {
     }
 }
 
-// Go language - delegate to Java as fallback
+// Go implementation - based on tree-sitter-go 0.25.0
 impl Checker for GoCode {
     fn is_comment(node: &Node) -> bool {
-        JavaCode::is_comment(node)
+        node.kind() == "comment"
     }
 
-    fn is_useful_comment(node: &Node, code: &[u8]) -> bool {
-        JavaCode::is_useful_comment(node, code)
+    fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
+        false
     }
 
     fn is_func_space(node: &Node) -> bool {
-        JavaCode::is_func_space(node)
+        matches!(
+            node.kind(),
+            "source_file" | "function_declaration" | "method_declaration" | "func_literal"
+        )
     }
 
     fn is_func(node: &Node) -> bool {
-        JavaCode::is_func(node)
+        matches!(node.kind(), "function_declaration" | "method_declaration")
     }
 
     fn is_closure(node: &Node) -> bool {
-        JavaCode::is_closure(node)
+        node.kind() == "func_literal"
     }
 
     fn is_call(node: &Node) -> bool {
-        JavaCode::is_call(node)
+        node.kind() == "call_expression"
     }
 
-    fn is_non_arg(node: &Node) -> bool {
-        JavaCode::is_non_arg(node)
+    fn is_non_arg(_: &Node) -> bool {
+        false
     }
 
     fn is_string(node: &Node) -> bool {
-        JavaCode::is_string(node)
+        matches!(
+            node.kind(),
+            "interpreted_string_literal" | "raw_string_literal"
+        )
     }
 
-    fn is_else_if(node: &Node) -> bool {
-        JavaCode::is_else_if(node)
+    fn is_else_if(_: &Node) -> bool {
+        false
     }
 
-    fn is_primitive(id: u16) -> bool {
-        JavaCode::is_primitive(id)
+    fn is_primitive(_id: u16) -> bool {
+        false
     }
 }
 
-// C# language - delegate to Java as fallback
+// C# implementation - based on tree-sitter-c-sharp 0.23.1
 impl Checker for CsharpCode {
     fn is_comment(node: &Node) -> bool {
-        JavaCode::is_comment(node)
+        node.kind() == "comment"
     }
 
-    fn is_useful_comment(node: &Node, code: &[u8]) -> bool {
-        JavaCode::is_useful_comment(node, code)
+    fn is_useful_comment(_: &Node, _: &[u8]) -> bool {
+        false
     }
 
     fn is_func_space(node: &Node) -> bool {
-        JavaCode::is_func_space(node)
+        matches!(
+            node.kind(),
+            "compilation_unit"
+            | "class_declaration"
+            | "struct_declaration"
+            | "interface_declaration"
+            | "record_declaration"
+        )
     }
 
     fn is_func(node: &Node) -> bool {
-        JavaCode::is_func(node)
+        matches!(
+            node.kind(),
+            "method_declaration" | "constructor_declaration"
+        )
     }
 
     fn is_closure(node: &Node) -> bool {
-        JavaCode::is_closure(node)
+        matches!(
+            node.kind(),
+            "lambda_expression" | "anonymous_method_expression"
+        )
     }
 
     fn is_call(node: &Node) -> bool {
-        JavaCode::is_call(node)
+        node.kind() == "invocation_expression"
     }
 
-    fn is_non_arg(node: &Node) -> bool {
-        JavaCode::is_non_arg(node)
+    fn is_non_arg(_: &Node) -> bool {
+        false
     }
 
     fn is_string(node: &Node) -> bool {
-        JavaCode::is_string(node)
+        matches!(
+            node.kind(),
+            "string_literal" | "interpolated_string_expression"
+        )
     }
 
-    fn is_else_if(node: &Node) -> bool {
-        JavaCode::is_else_if(node)
+    fn is_else_if(_: &Node) -> bool {
+        false
     }
 
-    fn is_primitive(id: u16) -> bool {
-        JavaCode::is_primitive(id)
+    fn is_primitive(_id: u16) -> bool {
+        false
     }
 }
