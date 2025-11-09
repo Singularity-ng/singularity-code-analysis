@@ -253,9 +253,6 @@ fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda
     stats.nesting = *nesting + depth + lambda;
     increment(stats);
     *nesting += 1;
-    // Reset boolean sequence after processing each control structure
-    // to prevent boolean operator context from carrying over to next statement
-    stats.boolean_seq.reset();
 }
 
 fn elixir_call_matches(node: &Node, keywords: &[&str]) -> bool {
