@@ -194,12 +194,6 @@ To build the `singularity-code-analysis` library:
 cargo build --release
 ```
 
-To build with CLI:
-
-```console
-cargo build --release --bin singularity-code-analysis-cli
-```
-
 ## Testing
 
 Run the comprehensive test suite:
