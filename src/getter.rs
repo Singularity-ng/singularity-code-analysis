@@ -439,33 +439,28 @@ impl Getter for RustCode {
 
 impl Getter for CppCode {
     fn get_func_space_name<'a>(node: &Node, code: &'a [u8]) -> Option<&'a str> {
-        match node.kind_id().into() {
-            Cpp::FunctionDefinition | Cpp::FunctionDefinition2 | Cpp::FunctionDefinition3 => {
-                if let Some(op_cast) = node.first_child(|id| Cpp::OperatorCast == id) {
+        match node.kind() {
+            "function_definition" => {
+                if let Some(op_cast) = node.first_child_kind(|child| child.kind() == "operator_cast") {
                     let code = &code[op_cast.start_byte()..op_cast.end_byte()];
                     return std::str::from_utf8(code).ok();
                 }
                 // we're in a function_definition so need to get the declarator
                 if let Some(declarator) = node.child_by_field_name("declarator") {
                     let declarator_node = declarator;
-                    if let Some(fd) = declarator_node.first_occurrence(|id| {
-                        Cpp::FunctionDeclarator == id
-                            || Cpp::FunctionDeclarator2 == id
-                            || Cpp::FunctionDeclarator3 == id
+                    if let Some(fd) = declarator_node.first_occurrence_kind(|child| {
+                        child.kind() == "function_declarator"
                     }) {
                         if let Some(first) = fd.child(0) {
-                            match first.kind_id().into() {
-                                Cpp::TypeIdentifier
-                                | Cpp::Identifier
-                                | Cpp::FieldIdentifier
-                                | Cpp::DestructorName
-                                | Cpp::OperatorName
-                                | Cpp::QualifiedIdentifier
-                                | Cpp::QualifiedIdentifier2
-                                | Cpp::QualifiedIdentifier3
-                                | Cpp::QualifiedIdentifier4
-                                | Cpp::TemplateFunction
-                                | Cpp::TemplateMethod => {
+                            match first.kind() {
+                                "type_identifier"
+                                | "identifier"
+                                | "field_identifier"
+                                | "destructor_name"
+                                | "operator_name"
+                                | "qualified_identifier"
+                                | "template_function"
+                                | "template_method" => {
                                     let code = &code[first.start_byte()..first.end_byte()];
                                     return std::str::from_utf8(code).ok();
                                 }
@@ -486,17 +481,12 @@ impl Getter for CppCode {
     }
 
     fn get_space_kind(node: &Node) -> SpaceKind {
-        use Cpp::{
-            ClassSpecifier, FunctionDefinition, FunctionDefinition2, FunctionDefinition3,
-            NamespaceDefinition, StructSpecifier, TranslationUnit,
-        };
-
-        match node.kind_id().into() {
-            FunctionDefinition | FunctionDefinition2 | FunctionDefinition3 => SpaceKind::Function,
-            StructSpecifier => SpaceKind::Struct,
-            ClassSpecifier => SpaceKind::Class,
-            NamespaceDefinition => SpaceKind::Namespace,
-            TranslationUnit => SpaceKind::Unit,
+        match node.kind() {
+            "function_definition" => SpaceKind::Function,
+            "struct_specifier" => SpaceKind::Struct,
+            "class_specifier" => SpaceKind::Class,
+            "namespace_definition" => SpaceKind::Namespace,
+            "translation_unit" => SpaceKind::Unit,
             _ => SpaceKind::Unknown,
         }
     }

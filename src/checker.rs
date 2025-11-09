@@ -171,7 +171,7 @@ impl Checker for CcommentCode {
 
 impl Checker for CppCode {
     fn is_comment(node: &Node) -> bool {
-        node.kind_id() == Cpp::Comment
+        node.kind() == "comment"
     }
 
     fn is_useful_comment(node: &Node, code: &[u8]) -> bool {
@@ -180,61 +180,52 @@ impl Checker for CppCode {
 
     fn is_func_space(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Cpp::TranslationUnit
-                | Cpp::FunctionDefinition
-                | Cpp::FunctionDefinition2
-                | Cpp::FunctionDefinition3
-                | Cpp::StructSpecifier
-                | Cpp::ClassSpecifier
-                | Cpp::NamespaceDefinition
+            node.kind(),
+            "translation_unit"
+                | "function_definition"
+                | "struct_specifier"
+                | "class_specifier"
+                | "namespace_definition"
         )
     }
 
     fn is_func(node: &Node) -> bool {
-        matches!(
-            node.kind_id().into(),
-            Cpp::FunctionDefinition
-                | Cpp::FunctionDefinition2
-                | Cpp::FunctionDefinition3
-                | Cpp::FunctionDefinition4
-        )
+        node.kind() == "function_definition"
     }
 
     fn is_closure(node: &Node) -> bool {
-        node.kind_id() == Cpp::LambdaExpression
+        node.kind() == "lambda_expression"
     }
 
     fn is_call(node: &Node) -> bool {
-        node.kind_id() == Cpp::CallExpression
+        node.kind() == "call_expression"
     }
 
     fn is_non_arg(node: &Node) -> bool {
-        matches!(
-            node.kind_id().into(),
-            Cpp::LPAREN | Cpp::LPAREN2 | Cpp::COMMA | Cpp::RPAREN
-        )
+        matches!(node.kind(), "(" | "," | ")")
     }
 
     fn is_string(node: &Node) -> bool {
         matches!(
-            node.kind_id().into(),
-            Cpp::StringLiteral | Cpp::ConcatenatedString | Cpp::RawStringLiteral
+            node.kind(),
+            "string_literal" | "concatenated_string" | "raw_string_literal"
         )
     }
 
     fn is_else_if(node: &Node) -> bool {
-        if node.kind_id() != Cpp::IfStatement {
+        if node.kind() != "if_statement" {
             return false;
         }
         if let Some(parent) = node.parent() {
-            return parent.kind_id() == Cpp::ElseClause;
+            return parent.kind() == "else_clause";
         }
         false
     }
 
     #[inline(always)]
     fn is_primitive(id: u16) -> bool {
+        // Since we're using kind strings now, we can't easily check this with just an ID
+        // Keep the old enum check for now since this is used in other parts
         id == Cpp::PrimitiveType
     }
 }
