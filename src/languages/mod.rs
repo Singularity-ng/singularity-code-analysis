@@ -1,7 +1,7 @@
 #![allow(clippy::enum_variant_names)]
 
 pub mod language_ccomment;
-pub use language_ccomment::*;
+// pub use language_ccomment::*;  // Unused
 
 pub mod language_cpp;
 pub use language_cpp::*;
@@ -31,7 +31,7 @@ pub mod language_typescript;
 pub use language_typescript::*;
 
 pub mod language_preproc;
-pub use language_preproc::*;
+// pub use language_preproc::*;  // Unused
 
 pub mod language_elixir;
 pub use language_elixir::*;
