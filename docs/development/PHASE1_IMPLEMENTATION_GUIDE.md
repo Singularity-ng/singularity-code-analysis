@@ -16,7 +16,7 @@
 ### Current Broken Code (lines 238-243)
 
 ```rust
-#[inline(always)]
+#[inline]
 fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda: usize) {
     stats.nesting = *nesting + depth + lambda;
     increment(stats);
@@ -70,7 +70,7 @@ Navigate to line 238-243.
 ### Step 2: Resulting Code
 
 ```rust
-#[inline(always)]
+#[inline]
 fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda: usize) {
     stats.nesting = *nesting + depth + lambda;
     increment(stats);

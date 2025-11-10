@@ -3,7 +3,10 @@ use serde::{
     Deserialize, Serialize,
 };
 
-use crate::*;
+use crate::{
+    alterator::Alterator,
+    traits::{Callback, ParserTrait},
+};
 
 /// Start and end positions of a node in a code in terms of rows and columns.
 ///

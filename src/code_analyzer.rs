@@ -168,6 +168,12 @@ impl SingularityCodeAnalyzer {
     }
 
     /// Analyze a file on disk. The language is detected from the file extension if possible.
+    ///
+    /// # Errors
+    /// Returns an [`AnalyzerError::Io`] if the file cannot be read, an
+    /// [`AnalyzerError::UnsupportedLanguage`] if no language matches the path, or
+    /// whatever error [`analyze_language`](Self::analyze_language) returns when the
+    /// metric pipeline fails.
     pub fn analyze_file(&self, path: &Path) -> Result<AnalyzerResult, AnalyzerError> {
         let contents = std::fs::read(path)?;
         let language = self

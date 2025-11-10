@@ -30,7 +30,7 @@ The singularity code analyzer is now **best-in-class** for AI/LLM coding systems
 #### **3. Performance Optimizations - 100% Complete**
 - ✅ **O(1) Language Detection** - Hash map lookup instead of linear search
 - ✅ **Global Registry** - Single instance with lazy initialization
-- ✅ **100% Inline Optimization** - All critical methods use `#[inline(always)]`
+- ✅ **100% Inline Optimization** - All critical methods use `#[inline]`
 - ✅ **Thread-Safe Operations** - Concurrent access support
 - ✅ **Memory Efficient** - Optimized data structures and algorithms
 

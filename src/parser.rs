@@ -73,7 +73,7 @@ impl Filter {
     }
 }
 
-#[inline(always)]
+#[inline]
 fn get_fake_code<T: LanguageInfo>(
     code: &[u8],
     path: &Path,
@@ -144,17 +144,17 @@ impl<
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn get_language(&self) -> LANG {
         T::get_lang()
     }
 
-    #[inline(always)]
+    #[inline]
     fn get_root(&self) -> Node<'_> {
         self.tree.get_root()
     }
 
-    #[inline(always)]
+    #[inline]
     fn get_code(&self) -> &[u8] {
         &self.code
     }

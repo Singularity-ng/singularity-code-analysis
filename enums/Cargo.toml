@@ -1,0 +1,31 @@
+[package]
+name = "enums"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+camino = "1"
+clap = { version = "4.5", features = ["derive"] }
+convert_case = "0.6"
+indexmap = "2"
+indoc = "2"
+itertools = "0.12"
+tree-sitter = "0.20.10"
+tree-sitter-c-sharp = "0.23.1"
+tree-sitter-cpp = "0.23.4"
+tree-sitter-elixir = "0.3.4"
+tree-sitter-erlang = "0.15.0"
+tree-sitter-gleam = "1.0.0"
+tree-sitter-go = "0.25.0"
+tree-sitter-java = "0.23.5"
+tree-sitter-javascript = "0.25.0"
+tree-sitter-kotlin-ng = "1.1.0"
+tree-sitter-lua = "0.2.0"
+tree-sitter-mozjs = "0.20.1"
+tree-sitter-python = "0.25.0"
+tree-sitter-rust = "0.24.0"
+tree-sitter-typescript = "0.23.2"
+tree-sitter-language = "0.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

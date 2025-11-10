@@ -1,3 +1,4 @@
+#[allow(clippy::wildcard_imports)]
 use crate::*;
 
 /// A trait to create a richer `AST` node for a programming language, mainly
@@ -11,16 +12,18 @@ where
     ///
     /// This function can be overloaded according to the needs of each
     /// programming language.
+    #[must_use]
     fn alterate(node: &Node, code: &[u8], span: bool, children: Vec<AstNode>) -> AstNode {
         Self::get_default(node, code, span, children)
     }
 
     /// Gets the code as text and the span associated to a node.
+    #[must_use]
     fn get_text_span(node: &Node, code: &[u8], span: bool, text: bool) -> (String, Span) {
         let text = if text {
             String::from_utf8(code[node.start_byte()..node.end_byte()].to_vec()).unwrap()
         } else {
-            "".to_string()
+            String::new()
         };
         if span {
             let (spos_row, spos_column) = node.start_position();
@@ -36,6 +39,7 @@ where
 
     /// Gets a default `AST` node containing the code associated to the node,
     /// its span, and its children.
+    #[must_use]
     fn get_default(node: &Node, code: &[u8], span: bool, children: Vec<AstNode>) -> AstNode {
         let (text, span) = Self::get_text_span(node, code, span, node.child_count() == 0);
         AstNode::new(node.kind(), text, span, children)
@@ -43,6 +47,7 @@ where
 
     /// Gets a new `AST` node if and only if the code is not a comment,
     /// otherwise [`None`] is returned.
+    #[must_use]
     fn get_ast_node(
         node: &Node,
         code: &[u8],

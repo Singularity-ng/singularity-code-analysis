@@ -5,8 +5,18 @@ use serde::{
     Serialize,
 };
 
+use num_traits::ToPrimitive;
+
+#[allow(clippy::wildcard_imports)]
 use crate::{
     analysis_context::node_text_equals_any, checker::Checker, macros::implement_metric_trait, *,
+};
+
+use crate::{
+    language_cpp::Cpp, language_elixir::Elixir, language_erlang::Erlang, language_gleam::Gleam,
+    language_java::Java, language_javascript::Javascript, language_mozjs::Mozjs,
+    language_python::Python, language_rust::Rust, language_tsx::Tsx,
+    language_typescript::Typescript,
 };
 
 // LIMITATION: Recursive function detection
@@ -97,6 +107,11 @@ impl fmt::Display for Stats {
 }
 
 impl Stats {
+    #[inline]
+    fn usize_to_f64(value: usize) -> f64 {
+        value.to_f64().unwrap_or(f64::MAX)
+    }
+
     /// Merges a second `Cognitive Complexity` metric into the first one
     pub fn merge(&mut self, other: &Stats) {
         self.structural_min = self.structural_min.min(other.structural_min);
@@ -105,21 +120,25 @@ impl Stats {
     }
 
     /// Returns the `Cognitive Complexity` metric value
+    #[must_use]
     pub fn cognitive(&self) -> f64 {
-        self.structural as f64
+        Self::usize_to_f64(self.structural)
     }
     /// Returns the `Cognitive Complexity` sum metric value
+    #[must_use]
     pub fn cognitive_sum(&self) -> f64 {
-        self.structural_sum as f64
+        Self::usize_to_f64(self.structural_sum)
     }
 
     /// Returns the `Cognitive Complexity` minimum metric value
+    #[must_use]
     pub fn cognitive_min(&self) -> f64 {
-        self.structural_min as f64
+        Self::usize_to_f64(self.structural_min)
     }
     /// Returns the `Cognitive Complexity` maximum metric value
+    #[must_use]
     pub fn cognitive_max(&self) -> f64 {
-        self.structural_max as f64
+        Self::usize_to_f64(self.structural_max)
     }
 
     /// Returns the `Cognitive Complexity` metric average value
@@ -128,14 +147,19 @@ impl Stats {
     /// for the total number of functions/closures in a space.
     ///
     /// If there are no functions in a code, its value is `NAN`.
+    #[must_use]
     pub fn cognitive_average(&self) -> f64 {
-        self.cognitive_sum() / self.total_space_functions as f64
+        if self.total_space_functions == 0 {
+            f64::NAN
+        } else {
+            self.cognitive_sum() / Self::usize_to_f64(self.total_space_functions)
+        }
     }
-    #[inline(always)]
+    #[inline]
     pub(crate) fn compute_sum(&mut self) {
         self.structural_sum += self.structural;
     }
-    #[inline(always)]
+    #[inline]
     pub(crate) fn compute_minmax(&mut self) {
         self.structural_min = self.structural_min.min(self.structural);
         self.structural_max = self.structural_max.max(self.structural);
@@ -158,6 +182,7 @@ where
     );
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn compute_booleans<T: std::cmp::PartialEq + std::convert::From<u16>>(
     node: &Node,
     stats: &mut Stats,
@@ -168,7 +193,7 @@ fn compute_booleans<T: std::cmp::PartialEq + std::convert::From<u16>>(
         if typs1 == child.kind_id().into() || typs2 == child.kind_id().into() {
             stats.structural = stats
                 .boolean_seq
-                .eval_based_on_prev(child.kind_id(), stats.structural)
+                .eval_based_on_prev(child.kind_id(), stats.structural);
         }
     }
 }
@@ -189,14 +214,14 @@ impl BoolSequence {
 
     fn eval_based_on_prev(&mut self, bool_id: u16, structural: usize) -> usize {
         if let Some(prev) = self.boolean_op {
-            if prev != bool_id {
-                // The boolean operator is different from the previous one, so
-                // the counter is incremented.
-                structural + 1
-            } else {
+            if prev == bool_id {
                 // The boolean operator is equal to the previous one, so
                 // the counter is not incremented.
                 structural
+            } else {
+                // The boolean operator is different from the previous one, so
+                // the counter is incremented.
+                structural + 1
             }
         } else {
             // Save the first boolean operator in a sequence of
@@ -207,12 +232,12 @@ impl BoolSequence {
     }
 }
 
-#[inline(always)]
+#[inline]
 fn increment(stats: &mut Stats) {
     stats.structural += stats.nesting + 1;
 }
 
-#[inline(always)]
+#[inline]
 fn increment_by_one(stats: &mut Stats) {
     stats.structural += 1;
 }
@@ -248,7 +273,7 @@ fn increment_function_depth<T: std::cmp::PartialEq + std::convert::From<u16>>(
     }
 }
 
-#[inline(always)]
+#[inline]
 fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda: usize) {
     stats.nesting = *nesting + depth + lambda;
     increment(stats);
@@ -261,8 +286,7 @@ fn elixir_call_matches(node: &Node, keywords: &[&str]) -> bool {
     }
     node.child(0)
         .filter(|child| child.kind_id() == Elixir::Identifier)
-        .map(|child| node_text_equals_any(&child, keywords))
-        .unwrap_or(false)
+        .is_some_and(|child| node_text_equals_any(&child, keywords))
 }
 
 impl Cognitive for PythonCode {

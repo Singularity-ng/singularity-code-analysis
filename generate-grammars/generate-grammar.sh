@@ -20,7 +20,7 @@ rm -rf node_modules
 popd
 
 # Recreate grammars
-./recreate-grammars.sh
+./scripts/recreate-grammars.sh
 
 # Run rust code-analysis to verify if everything works correctly and to
 # update the Cargo.lock

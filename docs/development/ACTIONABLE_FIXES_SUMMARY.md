@@ -24,7 +24,7 @@ stats.boolean_seq.reset();
 
 **Code Context**:
 ```rust
-#[inline(always)]
+#[inline]
 fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda: usize) {
     stats.nesting = *nesting + depth + lambda;
     increment(stats);
@@ -321,7 +321,7 @@ Actual: 1 exit point
 
 ```rust
 // Line 238-243, DELETE line 243
-#[inline(always)]
+#[inline]
 fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda: usize) {
     stats.nesting = *nesting + depth + lambda;
     increment(stats);

@@ -151,7 +151,7 @@ macro_rules! mk_action {
         /// ```
         ///
         /// [`Callback`]: trait.Callback.html
-        #[inline(always)]
+        #[inline]
         pub fn action<T: Callback>(lang: &LANG, source: Vec<u8>, path: &Path, pr: Option<Arc<PreprocResults>>, cfg: T::Cfg) -> T::Res {
             match lang {
                 $(
@@ -181,7 +181,7 @@ macro_rules! mk_action {
         ///
         /// get_function_spaces(&language, source_as_vec, &path, None).unwrap();
         /// ```
-        #[inline(always)]
+        #[inline]
         pub fn get_function_spaces(lang: &LANG, source: Vec<u8>, path: &Path, pr: Option<Arc<PreprocResults>>) -> Option<FuncSpace> {
             match lang {
                 $(
@@ -213,7 +213,7 @@ macro_rules! mk_action {
         /// get_ops(&language, source_as_vec, &path, None).unwrap();
         /// # }
         /// ```
-        #[inline(always)]
+        #[inline]
         pub fn get_ops(lang: &LANG, source: Vec<u8>, path: &Path, pr: Option<Arc<PreprocResults>>) -> Option<Ops> {
             match lang {
                 $(

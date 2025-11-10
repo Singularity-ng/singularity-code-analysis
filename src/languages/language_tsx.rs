@@ -404,7 +404,7 @@ pub enum Tsx {
     StatementIdentifier = 397,
     ThisType = 398,
     TypeIdentifier = 399,
-    Error = 400,
+    Error = 65535,
 }
 
 impl From<Tsx> for &'static str {
@@ -823,7 +823,6 @@ impl From<u16> for Tsx {
     }
 }
 
-// Tsx == u16
 impl PartialEq<u16> for Tsx {
     #[inline(always)]
     fn eq(&self, x: &u16) -> bool {
@@ -831,7 +830,6 @@ impl PartialEq<u16> for Tsx {
     }
 }
 
-// u16 == Tsx
 impl PartialEq<Tsx> for u16 {
     #[inline(always)]
     fn eq(&self, x: &Tsx) -> bool {

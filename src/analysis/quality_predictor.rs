@@ -1,32 +1,27 @@
-//! AI-Generated Code Quality Prediction
-//! 
-//! Pure calculation functions for predicting AI-generated code quality.
-//! Elixir handles orchestration, state management, and database operations.
+//! Language-aware code quality prediction.
+//!
+//! These helpers rely on static analysis heuristics only; the Elixir layer or
+//! other orchestrators can call into them to build higher level services.
 
 use crate::langs::LANG;
 
 /// Predict quality of AI-generated code before generation
-/// 
+///
 /// # Arguments
 /// * `code_features` - Features extracted from code specification
 /// * `language` - Target programming language
-/// * `model_name` - AI model being used
-/// 
+///
 /// # Returns
 /// * Quality prediction with confidence score
-#[inline(always)]
-pub fn predict_ai_code_quality(
-    code_features: &CodeFeatures,
-    language: LANG,
-    model_name: &str
-) -> AIQualityPrediction {
+#[inline]
+pub fn predict_language_quality(code_features: &CodeFeatures, language: LANG) -> QualityPrediction {
     let baseline = get_language_baseline(language);
     let predicted_quality = calculate_predicted_quality(code_features, &baseline);
-    let confidence_score = calculate_confidence(code_features, model_name);
+    let confidence_score = calculate_confidence(code_features);
     let risk_factors = identify_risk_factors(code_features, &baseline);
     let improvement_suggestions = generate_improvement_suggestions(code_features, &baseline);
-    
-    AIQualityPrediction {
+
+    QualityPrediction {
         predicted_quality,
         confidence_score,
         risk_factors,
@@ -35,10 +30,10 @@ pub fn predict_ai_code_quality(
 }
 
 /// Calculate predicted quality score based on code features
-#[inline(always)]
+#[inline]
 pub fn calculate_predicted_quality(
     features: &CodeFeatures,
-    baseline: &QualityBaseline
+    baseline: &QualityBaseline,
 ) -> QualityScore {
     let mut quality = QualityScore {
         overall_score: baseline.average_maintainability,
@@ -86,22 +81,21 @@ pub fn calculate_predicted_quality(
     quality.testability = features.test_coverage;
 
     // Calculate overall score
-    quality.overall_score = (
-        quality.maintainability + 
-        quality.readability + 
-        quality.testability + 
-        quality.performance + 
-        quality.security + 
-        quality.reliability
-    ) / 6.0;
+    quality.overall_score = (quality.maintainability
+        + quality.readability
+        + quality.testability
+        + quality.performance
+        + quality.security
+        + quality.reliability)
+        / 6.0;
 
     quality
 }
 
 /// Calculate confidence score for quality prediction
-#[inline(always)]
-pub fn calculate_confidence(features: &CodeFeatures, model_name: &str) -> f64 {
-    let mut confidence = 0.7; // Base confidence
+#[inline]
+pub fn calculate_confidence(features: &CodeFeatures) -> f64 {
+    let mut confidence = 0.7_f64; // Base confidence
 
     // Increase confidence for simpler code
     match features.complexity_level {
@@ -116,21 +110,14 @@ pub fn calculate_confidence(features: &CodeFeatures, model_name: &str) -> f64 {
         confidence += 0.05;
     }
 
-    // Adjust based on model (simplified)
-    if model_name.contains("claude") {
-        confidence += 0.1;
-    } else if model_name.contains("gpt") {
-        confidence += 0.05;
-    }
-
     confidence.min(1.0_f64).max(0.0_f64)
 }
 
 /// Identify risk factors that could affect quality
-#[inline(always)]
+#[inline]
 pub fn identify_risk_factors(
-    features: &CodeFeatures, 
-    baseline: &QualityBaseline
+    features: &CodeFeatures,
+    baseline: &QualityBaseline,
 ) -> Vec<RiskFactor> {
     let mut risks = Vec::new();
 
@@ -178,10 +165,10 @@ pub fn identify_risk_factors(
 }
 
 /// Generate improvement suggestions based on code features
-#[inline(always)]
+#[inline]
 pub fn generate_improvement_suggestions(
-    features: &CodeFeatures, 
-    _baseline: &QualityBaseline
+    features: &CodeFeatures,
+    _baseline: &QualityBaseline,
 ) -> Vec<String> {
     let mut suggestions = Vec::new();
 
@@ -209,11 +196,10 @@ pub fn generate_improvement_suggestions(
 }
 
 /// Extract code features from specification
-#[inline(always)]
+#[inline]
 pub fn extract_features_from_spec(spec: &CodeSpecification, language: LANG) -> CodeFeatures {
-    CodeFeatures {
+    let mut features = CodeFeatures {
         complexity_level: estimate_complexity_level(spec),
-        language,
         function_count: spec.expected_function_count,
         class_count: spec.expected_class_count,
         nesting_depth: spec.expected_nesting_depth,
@@ -224,16 +210,38 @@ pub fn extract_features_from_spec(spec: &CodeSpecification, language: LANG) -> C
         test_coverage: spec.expected_test_coverage,
         naming_convention_score: assess_naming_convention(spec),
         design_pattern_usage: identify_design_patterns(spec),
+    };
+
+    match language {
+        LANG::Rust | LANG::Go | LANG::Cpp => {
+            features.naming_convention_score = (features.naming_convention_score + 0.05).min(1.0);
+        }
+        LANG::Elixir | LANG::Erlang | LANG::Gleam => {
+            if spec.requires_error_handling && !features.error_handling_present {
+                features.error_handling_present = true;
+            }
+        }
+        LANG::Javascript | LANG::Typescript | LANG::Csharp => {
+            if !features
+                .design_pattern_usage
+                .contains(&"Module".to_string())
+            {
+                features.design_pattern_usage.push("Module".to_string());
+            }
+        }
+        _ => {}
     }
+
+    features
 }
 
 /// Calculate improvement score between two quality scores
-#[inline(always)]
+#[inline]
 pub fn calculate_quality_improvement_score(before: &QualityScore, after: &QualityScore) -> f64 {
     let maintainability_improvement = (after.maintainability - before.maintainability) / 100.0;
     let readability_improvement = (after.readability - before.readability) / 100.0;
     let testability_improvement = (after.testability - before.testability) / 100.0;
-    
+
     (maintainability_improvement + readability_improvement + testability_improvement) / 3.0
 }
 
@@ -329,7 +337,7 @@ fn assess_naming_convention(spec: &CodeSpecification) -> f64 {
 
 fn identify_design_patterns(spec: &CodeSpecification) -> Vec<String> {
     let mut patterns = Vec::new();
-    
+
     if spec.description.contains("singleton") {
         patterns.push("Singleton".to_string());
     }
@@ -339,7 +347,7 @@ fn identify_design_patterns(spec: &CodeSpecification) -> Vec<String> {
     if spec.description.contains("observer") {
         patterns.push("Observer".to_string());
     }
-    
+
     patterns
 }
 
@@ -347,7 +355,6 @@ fn identify_design_patterns(spec: &CodeSpecification) -> Vec<String> {
 #[derive(Debug, Clone)]
 pub struct CodeFeatures {
     pub complexity_level: ComplexityLevel,
-    pub language: LANG,
     pub function_count: u32,
     pub class_count: u32,
     pub nesting_depth: u32,
@@ -402,7 +409,7 @@ pub struct QualityThresholds {
 
 /// Quality prediction result
 #[derive(Debug, Clone)]
-pub struct AIQualityPrediction {
+pub struct QualityPrediction {
     pub predicted_quality: QualityScore,
     pub confidence_score: f64,
     pub risk_factors: Vec<RiskFactor>,
@@ -456,10 +463,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_predict_ai_code_quality() {
+    fn test_predict_language_quality() {
         let features = CodeFeatures {
             complexity_level: ComplexityLevel::Simple,
-            language: LANG::Rust,
             function_count: 1,
             class_count: 0,
             nesting_depth: 1,
@@ -472,7 +478,7 @@ mod tests {
             design_pattern_usage: vec![],
         };
 
-        let prediction = predict_ai_code_quality(&features, LANG::Rust, "claude-sonnet-4.5");
+        let prediction = predict_language_quality(&features, LANG::Rust);
         assert!(prediction.predicted_quality.overall_score > 0.0);
         assert!(prediction.confidence_score > 0.0);
     }
@@ -481,7 +487,6 @@ mod tests {
     fn test_calculate_predicted_quality() {
         let features = CodeFeatures {
             complexity_level: ComplexityLevel::Simple,
-            language: LANG::Rust,
             function_count: 1,
             class_count: 0,
             nesting_depth: 1,

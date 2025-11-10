@@ -125,7 +125,7 @@ impl SemanticAnalyzer {
     /// Generate embeddings for code blocks
     /// This is a simplified implementation - in production, you'd use
     /// a proper embedding model like sentence-transformers or OpenAI embeddings
-    #[inline(always)]
+    #[inline]
     pub fn embed_code(&self, code: &str) -> Vec<f32> {
         // Simplified embedding generation based on character frequency
         // In production, replace with actual embedding model
@@ -301,7 +301,7 @@ impl SemanticAnalyzer {
     }
 
     /// Calculate cosine similarity between two vectors
-    #[inline(always)]
+    #[inline]
     fn cosine_similarity(&self, a: &[f32], b: &[f32]) -> f32 {
         if a.len() != b.len() {
             return 0.0;
@@ -432,7 +432,7 @@ mod tests {
     #[test]
     fn test_suggest_refactoring() {
         let analyzer = SemanticAnalyzer::new();
-        let nested_code = r#"
+        let nested_code = r"
         fn complex_function() {
             if condition1 {
                 if condition2 {
@@ -444,7 +444,7 @@ mod tests {
                 }
             }
         }
-        "#;
+        ";
         let suggestions = analyzer.suggest_refactoring(nested_code);
 
         assert!(!suggestions.is_empty());

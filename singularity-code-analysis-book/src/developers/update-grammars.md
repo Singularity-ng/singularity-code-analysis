@@ -22,10 +22,16 @@ tree-sitter-java = "x.xx.x"
 ```
 where `x` represents a digit.
 
-Run `./recreate-grammars.sh` to recreate and refresh all grammars structures and data
+Run `./scripts/recreate-grammars.sh` to recreate and refresh all grammars structures and data.
+
+> Tip: CI now runs `./scripts/check-grammar-sync.sh`, which executes the same
+> regeneration flow and fails if the generated enums in `src/languages/` or
+> `src/c_langs_macros/` are out of date. Run it locally (or enable the git hook
+> via `./scripts/install-git-hooks.sh`) before pushing a branch that modifies
+> grammar inputs to avoid a failing workflow.
 
 ```bash
-./recreate-grammars.sh
+./scripts/recreate-grammars.sh
 ```
 
 Once the script above has finished its execution, you need to fix, if there are any, all failed tests and problems

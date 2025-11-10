@@ -383,11 +383,11 @@ pub enum Typescript {
     InterfaceBody = 376,
     PropertyIdentifier = 377,
     ShorthandPropertyIdentifier = 378,
-    ShorthandPropertyIdentifierCodePattern = 379,
+    ShorthandPropertyIdentifierPattern = 379,
     StatementIdentifier = 380,
     ThisType = 381,
     TypeIdentifier = 382,
-    Error = 383,
+    Error = 65535,
 }
 
 impl From<Typescript> for &'static str {
@@ -775,7 +775,7 @@ impl From<Typescript> for &'static str {
             Typescript::InterfaceBody => "interface_body",
             Typescript::PropertyIdentifier => "property_identifier",
             Typescript::ShorthandPropertyIdentifier => "shorthand_property_identifier",
-            Typescript::ShorthandPropertyIdentifierCodePattern => {
+            Typescript::ShorthandPropertyIdentifierPattern => {
                 "shorthand_property_identifier_pattern"
             }
             Typescript::StatementIdentifier => "statement_identifier",
@@ -793,7 +793,6 @@ impl From<u16> for Typescript {
     }
 }
 
-// Typescript == u16
 impl PartialEq<u16> for Typescript {
     #[inline(always)]
     fn eq(&self, x: &u16) -> bool {
@@ -801,7 +800,6 @@ impl PartialEq<u16> for Typescript {
     }
 }
 
-// u16 == Typescript
 impl PartialEq<Typescript> for u16 {
     #[inline(always)]
     fn eq(&self, x: &Typescript) -> bool {

@@ -30,6 +30,7 @@ pub struct Node<'a>(OtherNode<'a>);
 impl<'a> Node<'a> {
     /// Checks if a node represents a syntax error or contains any syntax errors
     /// anywhere within it.
+    #[must_use]
     pub fn has_error(&self) -> bool {
         self.0.has_error()
     }
@@ -80,7 +81,7 @@ impl<'a> Node<'a> {
         self.0.parent().map(Node)
     }
 
-    #[inline(always)]
+    #[inline]
     #[allow(dead_code)]
     pub(crate) fn has_sibling(&self, id: u16) -> bool {
         self.0.parent().is_some_and(|parent| {
@@ -109,7 +110,7 @@ impl<'a> Node<'a> {
         None
     }
 
-    #[inline(always)]
+    #[inline]
     pub(crate) fn is_child(&self, id: u16) -> bool {
         self.0
             .children(&mut self.0.walk())

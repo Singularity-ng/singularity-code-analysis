@@ -294,7 +294,7 @@ mod tests {
 
     use crate::{get_ops, LANG};
 
-    #[inline(always)]
+    #[inline]
     fn check_ops(
         lang: LANG,
         source: &str,

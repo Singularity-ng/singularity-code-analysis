@@ -97,7 +97,7 @@ IfStatement
 
 **BEFORE** (Lines 237-243):
 ```rust
-#[inline(always)]
+#[inline]
 fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda: usize) {
     stats.nesting = *nesting + depth + lambda;
     increment(stats);
@@ -108,7 +108,7 @@ fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda
 
 **AFTER**:
 ```rust
-#[inline(always)]
+#[inline]
 fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda: usize) {
     stats.nesting = *nesting + depth + lambda;
     increment(stats);

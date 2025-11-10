@@ -1,10 +1,11 @@
-use std::fmt;
+use std::{convert::TryFrom, fmt};
 
 use serde::{
     ser::{SerializeStruct, Serializer},
     Serialize,
 };
 
+#[allow(clippy::wildcard_imports)]
 use crate::{checker::Checker, macros::implement_metric_trait, node::Node, *};
 
 /// The `ABC` metric.
@@ -132,12 +133,21 @@ impl Stats {
         self.space_count += other.space_count;
     }
 
+    #[inline]
+    #[allow(clippy::cast_precision_loss)]
+    fn space_count_as_f64(&self) -> f64 {
+        let count = u64::try_from(self.space_count).unwrap_or(u64::MAX).max(1);
+        count as f64
+    }
+
     /// Returns the `Abc` assignments metric value.
+    #[must_use]
     pub fn assignments(&self) -> f64 {
         self.assignments
     }
 
     /// Returns the `Abc` assignments sum metric value.
+    #[must_use]
     pub fn assignments_sum(&self) -> f64 {
         self.assignments_sum
     }
@@ -146,26 +156,31 @@ impl Stats {
     ///
     /// This value is computed dividing the `Abc`
     /// assignments value for the number of spaces.
+    #[must_use]
     pub fn assignments_average(&self) -> f64 {
-        self.assignments_sum() / self.space_count as f64
+        self.assignments_sum() / self.space_count_as_f64()
     }
 
     /// Returns the `Abc` assignments minimum value.
+    #[must_use]
     pub fn assignments_min(&self) -> f64 {
         self.assignments_min
     }
 
     /// Returns the `Abc` assignments maximum value.
+    #[must_use]
     pub fn assignments_max(&self) -> f64 {
         self.assignments_max
     }
 
     /// Returns the `Abc` branches metric value.
+    #[must_use]
     pub fn branches(&self) -> f64 {
         self.branches
     }
 
     /// Returns the `Abc` branches sum metric value.
+    #[must_use]
     pub fn branches_sum(&self) -> f64 {
         self.branches_sum
     }
@@ -174,26 +189,31 @@ impl Stats {
     ///
     /// This value is computed dividing the `Abc`
     /// branches value for the number of spaces.
+    #[must_use]
     pub fn branches_average(&self) -> f64 {
-        self.branches_sum() / self.space_count as f64
+        self.branches_sum() / self.space_count_as_f64()
     }
 
     /// Returns the `Abc` branches minimum value.
+    #[must_use]
     pub fn branches_min(&self) -> f64 {
         self.branches_min
     }
 
     /// Returns the `Abc` branches maximum value.
+    #[must_use]
     pub fn branches_max(&self) -> f64 {
         self.branches_max
     }
 
     /// Returns the `Abc` conditions metric value.
+    #[must_use]
     pub fn conditions(&self) -> f64 {
         self.conditions
     }
 
     /// Returns the `Abc` conditions sum metric value.
+    #[must_use]
     pub fn conditions_sum(&self) -> f64 {
         self.conditions_sum
     }
@@ -202,39 +222,44 @@ impl Stats {
     ///
     /// This value is computed dividing the `Abc`
     /// conditions value for the number of spaces.
+    #[must_use]
     pub fn conditions_average(&self) -> f64 {
-        self.conditions_sum() / self.space_count as f64
+        self.conditions_sum() / self.space_count_as_f64()
     }
 
     /// Returns the `Abc` conditions minimum value.
+    #[must_use]
     pub fn conditions_min(&self) -> f64 {
         self.conditions_min
     }
 
     /// Returns the `Abc` conditions maximum value.
+    #[must_use]
     pub fn conditions_max(&self) -> f64 {
         self.conditions_max
     }
 
     /// Returns the `Abc` magnitude metric value.
+    #[must_use]
     pub fn magnitude(&self) -> f64 {
         (self.assignments.powi(2) + self.branches.powi(2) + self.conditions.powi(2)).sqrt()
     }
 
     /// Returns the `Abc` magnitude sum metric value.
+    #[must_use]
     pub fn magnitude_sum(&self) -> f64 {
         (self.assignments_sum.powi(2) + self.branches_sum.powi(2) + self.conditions_sum.powi(2))
             .sqrt()
     }
 
-    #[inline(always)]
+    #[inline]
     pub(crate) fn compute_sum(&mut self) {
         self.assignments_sum += self.assignments;
         self.branches_sum += self.branches;
         self.conditions_sum += self.conditions;
     }
 
-    #[inline(always)]
+    #[inline]
     pub(crate) fn compute_minmax(&mut self) {
         self.assignments_min = self.assignments_min.min(self.assignments);
         self.assignments_max = self.assignments_max.max(self.assignments);
@@ -256,6 +281,7 @@ where
 // Inspects the content of Java parenthesized expressions
 // and `Not` operators to find unary conditional expressions
 fn java_inspect_container(container_node: &Node, conditions: &mut f64) {
+    #[allow(clippy::enum_glob_use)]
     use Java::*;
 
     let mut node = *container_node;
@@ -310,6 +336,7 @@ fn java_inspect_container(container_node: &Node, conditions: &mut f64) {
 
 // Inspects a list of elements and counts any unary conditional expression found
 fn java_count_unary_conditions(list_node: &Node, conditions: &mut f64) {
+    #[allow(clippy::enum_glob_use)]
     use Java::*;
 
     let list_kind = list_node.kind_id().into();
@@ -367,7 +394,9 @@ implement_metric_trait!(
 // ABC Java rules: (page 8, figure 4)
 // ABC Java example: (page 15, listing 4)
 impl Abc for JavaCode {
+    #[allow(clippy::too_many_lines)]
     fn compute(node: &Node, stats: &mut Stats) {
+        #[allow(clippy::enum_glob_use)]
         use Java::*;
 
         match node.kind_id().into() {
@@ -390,17 +419,10 @@ impl Abc for JavaCode {
             }
             EQ => {
                 // Excludes constant declarations
-                stats
-                    .declaration
-                    .last()
-                    .map(|decl| {
-                        if matches!(decl, DeclKind::Var) {
-                            stats.assignments += 1.;
-                        }
-                    })
-                    .unwrap_or_else(|| {
-                        stats.assignments += 1.;
-                    });
+                match stats.declaration.last() {
+                    Some(DeclKind::Var) | None => stats.assignments += 1.,
+                    _ => {}
+                }
             }
             MethodInvocation | New => {
                 stats.branches += 1.;
@@ -498,7 +520,7 @@ impl Abc for JavaCode {
                         value.kind_id().into(),
                         ParenthesizedExpression | UnaryExpression
                     ) {
-                        java_inspect_container(&value, &mut stats.conditions)
+                        java_inspect_container(&value, &mut stats.conditions);
                     }
                 }
             }
@@ -510,7 +532,7 @@ impl Abc for JavaCode {
                         value.kind_id().into(),
                         ParenthesizedExpression | UnaryExpression
                     ) {
-                        java_inspect_container(&value, &mut stats.conditions)
+                        java_inspect_container(&value, &mut stats.conditions);
                     }
                 }
             }

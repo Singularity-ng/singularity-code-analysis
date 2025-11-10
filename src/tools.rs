@@ -144,7 +144,7 @@ const FIRST_EMACS_EXPRESSION: &str = r"(?i)-\*-.*[^-\w]mode\s*:\s*([^:;\s]+)";
 const SECOND_EMACS_EXPRESSION: &str = r"-\*-\s*([^:;\s]+)\s*-\*-";
 const VIM_EXPRESSION: &str = r"(?i)vim\s*:.*[^\w]ft\s*=\s*([^:\s]+)";
 
-#[inline(always)]
+#[inline]
 fn get_regex<'a>(
     once_lock: &OnceLock<Regex>,
     line: &'a [u8],
@@ -369,12 +369,12 @@ pub(crate) fn guess_file<S: ::std::hash::BuildHasher>(
     vec![]
 }
 
-#[inline(always)]
+#[inline]
 pub(crate) fn color(stdout: &mut StandardStreamLock, color: Color) -> std::io::Result<()> {
     stdout.set_color(ColorSpec::new().set_fg(Some(color)))
 }
 
-#[inline(always)]
+#[inline]
 pub(crate) fn intense_color(stdout: &mut StandardStreamLock, color: Color) -> std::io::Result<()> {
     stdout.set_color(ColorSpec::new().set_fg(Some(color)).set_intense(true))
 }

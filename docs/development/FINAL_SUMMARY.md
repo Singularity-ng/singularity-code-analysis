@@ -21,7 +21,7 @@ A **comprehensive Rust library** for insight-driven code analysis with **Postgre
 
 ### **⚡ Performance Features**
 - **O(1) Language Detection** - Hash map lookup
-- **100% Inline Optimization** - All critical methods use `#[inline(always)]`
+- **100% Inline Optimization** - All critical methods use `#[inline]`
 - **Thread-Safe** - Concurrent access support
 - **Memory Efficient** - Optimized data structures
 - **Vector Search** - Sub-second similarity search with pgvector

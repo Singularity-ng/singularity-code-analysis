@@ -5,6 +5,11 @@
 - **Tests Failing**: 90 (34.9%)
 - **Goal**: 250+/258 (96%+)
 
+## First-Time Setup
+- Run `./scripts/install-git-hooks.sh` once after cloning to enable the local
+  grammar-sync hook (`scripts/check-grammar-sync.sh`). This keeps the generated
+  enums in `src/languages/` current whenever you switch branches.
+
 ---
 
 ## The ONE Critical Fix (Do This First!)
@@ -20,7 +25,7 @@ stats.boolean_seq.reset();
 
 **Full context** (should look like this after edit):
 ```rust
-#[inline(always)]
+#[inline]
 fn increase_nesting(stats: &mut Stats, nesting: &mut usize, depth: usize, lambda: usize) {
     stats.nesting = *nesting + depth + lambda;
     increment(stats);
@@ -249,4 +254,3 @@ cargo build --lib  # Check compilation
 5. Repeat Phases 2-4 for remaining 59 failures
 
 **Total time to 96% pass rate**: 5-8 hours
-

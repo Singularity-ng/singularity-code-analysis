@@ -10,7 +10,7 @@ use crate::{
 
 macro_rules! get_operator {
     ($language:ident) => {
-        #[inline(always)]
+        #[inline]
         fn get_operator_id_as_str(id: u16) -> &'static str {
             let typ = id.into();
             match typ {
@@ -24,10 +24,12 @@ macro_rules! get_operator {
 }
 
 pub trait Getter {
+    #[must_use]
     fn get_func_name<'a>(node: &Node, code: &'a [u8]) -> Option<&'a str> {
         Self::get_func_space_name(node, code)
     }
 
+    #[must_use]
     fn get_func_space_name<'a>(node: &Node, code: &'a [u8]) -> Option<&'a str> {
         // we're in a function or in a class
         node.child_by_field_name("name")
@@ -37,14 +39,17 @@ pub trait Getter {
             })
     }
 
+    #[must_use]
     fn get_space_kind(_node: &Node) -> SpaceKind {
         SpaceKind::Unknown
     }
 
+    #[must_use]
     fn get_op_type(_node: &Node) -> HalsteadType {
         HalsteadType::Unknown
     }
 
+    #[must_use]
     fn get_operator_id_as_str(_id: u16) -> &'static str {
         ""
     }
@@ -987,10 +992,8 @@ impl Getter for ElixirCode {
             }
             "+" | "-" | "*" | "/" | "%" | "++" | "--" | "::" | "->" | "<-" | "<>" | "||" | "&&"
             | "===" | "==" | "!==" | "!=" | "<" | "<=" | ">" | ">=" | "in" | "when" | "and"
-            | "or" | "not" | "xor" | "<<<" | ">>>" | "^^^" | "~~~" | "&&&" | "|||" | "." => {
-                HalsteadType::Operator
-            }
-            "if" | "unless" | "case" | "fn" | "do" | "after" | "rescue" | "catch" | "else" => {
+            | "or" | "not" | "xor" | "<<<" | ">>>" | "^^^" | "~~~" | "&&&" | "|||" | "." | "if"
+            | "unless" | "case" | "fn" | "do" | "after" | "rescue" | "catch" | "else" => {
                 HalsteadType::Operator
             }
             "nil" | "true" | "false" => HalsteadType::Operand,

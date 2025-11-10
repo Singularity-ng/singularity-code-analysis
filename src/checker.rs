@@ -3,6 +3,7 @@ use std::sync::OnceLock;
 use aho_corasick::AhoCorasick;
 use regex::bytes::Regex;
 
+#[allow(clippy::wildcard_imports)]
 use crate::*;
 
 static AHO_CORASICK: OnceLock<AhoCorasick> = OnceLock::new();
@@ -49,19 +50,19 @@ macro_rules! is_js_closure {
 
 macro_rules! is_js_func_and_closure_checker {
     ($parser: ident, $language: ident) => {
-        #[inline(always)]
+        #[inline]
         fn is_func(node: &Node) -> bool {
             is_js_func!($parser, node)
         }
 
-        #[inline(always)]
+        #[inline]
         fn is_closure(node: &Node) -> bool {
             is_js_closure!($parser, node)
         }
     };
 }
 
-#[inline(always)]
+#[inline]
 fn get_aho_corasick_match(code: &[u8]) -> bool {
     AHO_CORASICK
         .get_or_init(|| AhoCorasick::new(vec![b"<div rustbindgen"]).unwrap())
@@ -222,7 +223,7 @@ impl Checker for CppCode {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_primitive(id: u16) -> bool {
         // Since we're using kind strings now, we can't easily check this with just an ID
         // Keep the old enum check for now since this is used in other parts
@@ -367,7 +368,7 @@ impl Checker for MozjsCode {
         node.kind() == "string" || node.kind() == "template_string"
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_else_if(node: &Node) -> bool {
         if node.kind() != "if_statement" {
             return false;
@@ -421,7 +422,7 @@ impl Checker for JavascriptCode {
         node.kind() == "string" || node.kind() == "template_string"
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_else_if(node: &Node) -> bool {
         if node.kind() != "if_statement" {
             return false;
@@ -476,7 +477,7 @@ impl Checker for TypescriptCode {
         node.kind() == "string" || node.kind() == "template_string"
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_else_if(node: &Node) -> bool {
         if node.kind() != "if_statement" {
             return false;
@@ -487,7 +488,7 @@ impl Checker for TypescriptCode {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_primitive(id: u16) -> bool {
         id == Typescript::PredefinedType
     }
@@ -542,7 +543,7 @@ impl Checker for TsxCode {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_primitive(id: u16) -> bool {
         id == Tsx::PredefinedType
     }
@@ -591,7 +592,7 @@ impl Checker for RustCode {
         matches!(node.kind(), "string_literal" | "raw_string_literal")
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_else_if(node: &Node) -> bool {
         if node.kind() != "if_expression" {
             return false;
@@ -602,7 +603,7 @@ impl Checker for RustCode {
         false
     }
 
-    #[inline(always)]
+    #[inline]
     fn is_primitive(id: u16) -> bool {
         id == Rust::PrimitiveType
     }

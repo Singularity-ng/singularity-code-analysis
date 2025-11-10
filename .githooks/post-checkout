@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Runs after every checkout to ensure generated grammar enums are current.
+# This hook is intentionally non-blocking: if the sync check fails we just
+# print a reminder message so the developer can inspect the differences.
+
+set -euo pipefail
+
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || exit 0)
+cd "$REPO_ROOT"
+
+CHECK_SCRIPT="scripts/check-grammar-sync.sh"
+if [ ! -x "$CHECK_SCRIPT" ]; then
+  exit 0
+fi
+
+if ! "$CHECK_SCRIPT" --quiet; then
+  echo "⚠️  Grammar sync check reported differences. Run $CHECK_SCRIPT manually to review." >&2
+fi

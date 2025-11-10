@@ -293,7 +293,7 @@ pub enum Kotlin {
     MultilineStringLiteralRepeat1 = 286,
     TypeParameterModifiersRepeat1 = 287,
     QualifiedIdentifierRepeat1 = 288,
-    Error = 289,
+    Error = 65535,
 }
 
 impl From<Kotlin> for &'static str {
@@ -601,7 +601,6 @@ impl From<u16> for Kotlin {
     }
 }
 
-// Kotlin == u16
 impl PartialEq<u16> for Kotlin {
     #[inline(always)]
     fn eq(&self, x: &u16) -> bool {
@@ -609,7 +608,6 @@ impl PartialEq<u16> for Kotlin {
     }
 }
 
-// u16 == Kotlin
 impl PartialEq<Kotlin> for u16 {
     #[inline(always)]
     fn eq(&self, x: &Kotlin) -> bool {

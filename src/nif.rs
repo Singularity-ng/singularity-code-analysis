@@ -1,20 +1,24 @@
-//! NIF (Native Implemented Functions) for Elixir integration
-//! 
-//! This module provides Rustler NIF functions that expose the SCA library
-//! functionality to Elixir, following the "Rust calculates, Elixir orchestrates" pattern.
+//! NIF (Native Implemented Functions) for Elixir integration.
+//!
+//! These entry points intentionally stay lightweight: every exported function
+//! performs a deterministic, per-language calculation (quality prediction,
+//! language-aware complexity score, evolution tracking, etc.) while the Elixir
+//! side is responsible for orchestration, persistence, and any AI/LLM layer the
+//! application might build on top.  When wiring up new NIFs keep the same split:
+//! **Rust = pure computation, Elixir = I/O + coordination**.
 
 use rustler::{Encoder, Env, Error, Term};
 use serde_json;
 use std::collections::HashMap;
 
-use crate::ai::*;
+use crate::analysis::*;
 use crate::langs::LANG;
 
-/// Calculate AI-optimized complexity score for learning
+/// Calculate the weighted complexity score for a given language.
 #[rustler::nif]
-pub fn calculate_ai_complexity_score(code: String, language_hint: String) -> Result<f64, Error> {
+pub fn calculate_language_complexity_score(code: String, language_hint: String) -> Result<f64, Error> {
     let language = parse_language_hint(&language_hint);
-    Ok(calculate_ai_complexity_score(&code, language))
+    Ok(calculate_language_complexity_score(&code, language))
 }
 
 /// Extract complexity features from code
@@ -40,9 +44,9 @@ pub fn extract_complexity_features(code: String, language_hint: String) -> Resul
 /// Calculate code evolution trends
 #[rustler::nif]
 pub fn calculate_evolution_trends(before_metrics: HashMap<String, serde_json::Value>, after_metrics: HashMap<String, serde_json::Value>) -> Result<HashMap<String, serde_json::Value>, Error> {
-    // Convert HashMap to CodeMetrics structs
-    let before = hashmap_to_code_metrics(&before_metrics)?;
-    let after = hashmap_to_code_metrics(&after_metrics)?;
+    // Convert HashMap to EvolutionMetrics structs
+    let before = hashmap_to_evolution_metrics(&before_metrics)?;
+    let after = hashmap_to_evolution_metrics(&after_metrics)?;
     
     let (complexity_trend, maintainability_trend, quality_trend) = calculate_evolution_trends(&before, &after);
     
@@ -54,17 +58,30 @@ pub fn calculate_evolution_trends(before_metrics: HashMap<String, serde_json::Va
     Ok(result)
 }
 
-/// Predict AI-generated code quality
+/// Predict language-aware code quality
 #[rustler::nif]
-pub fn predict_ai_code_quality(code_features: HashMap<String, serde_json::Value>, language_hint: String, model_name: String) -> Result<HashMap<String, serde_json::Value>, Error> {
+pub fn predict_code_quality(
+    code_features: HashMap<String, serde_json::Value>,
+    language_hint: String,
+) -> Result<HashMap<String, serde_json::Value>, Error> {
     let language = parse_language_hint(&language_hint);
     let features = hashmap_to_code_features(&code_features)?;
     
-    let prediction = predict_ai_code_quality(&features, language, &model_name);
+    let prediction = predict_language_quality(&features, language);
     
     let mut result = HashMap::new();
-    result.insert("predicted_quality".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(prediction.predicted_quality.overall).unwrap()));
-    result.insert("confidence".to_string(), serde_json::Value::Number(serde_json::Number::from_f64(prediction.confidence).unwrap()));
+    result.insert(
+        "predicted_quality".to_string(),
+        serde_json::Value::Number(
+            serde_json::Number::from_f64(prediction.predicted_quality.overall_score).unwrap(),
+        ),
+    );
+    result.insert(
+        "confidence".to_string(),
+        serde_json::Value::Number(
+            serde_json::Number::from_f64(prediction.confidence_score).unwrap(),
+        ),
+    );
     result.insert("risk_factors".to_string(), serde_json::Value::Array(
         prediction.risk_factors.iter().map(|rf| {
             let mut rf_map = HashMap::new();
@@ -106,8 +123,7 @@ fn parse_language_hint(hint: &str) -> LANG {
         "javascript" | "js" => LANG::Javascript,
         "typescript" | "ts" => LANG::Typescript,
         "java" => LANG::Java,
-        "cpp" | "c++" => LANG::Cpp,
-        "c" => LANG::C,
+        "cpp" | "c++" | "c" => LANG::Cpp,
         "go" | "golang" => LANG::Go,
         "erlang" => LANG::Erlang,
         "gleam" => LANG::Gleam,
@@ -116,9 +132,9 @@ fn parse_language_hint(hint: &str) -> LANG {
     }
 }
 
-/// Convert HashMap to CodeMetrics struct
-fn hashmap_to_code_metrics(map: &HashMap<String, serde_json::Value>) -> Result<CodeMetrics, Error> {
-    Ok(CodeMetrics {
+/// Convert HashMap to evolution metrics
+fn hashmap_to_evolution_metrics(map: &HashMap<String, serde_json::Value>) -> Result<EvolutionMetrics, Error> {
+    Ok(EvolutionMetrics {
         cyclomatic_complexity: map.get("cyclomatic_complexity")
             .and_then(|v| v.as_f64())
             .unwrap_or(0.0),
@@ -139,38 +155,74 @@ fn hashmap_to_code_metrics(map: &HashMap<String, serde_json::Value>) -> Result<C
 
 /// Convert HashMap to CodeFeatures struct
 fn hashmap_to_code_features(map: &HashMap<String, serde_json::Value>) -> Result<CodeFeatures, Error> {
-    Ok(CodeFeatures {
-        lines_of_code: map.get("lines_of_code")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as usize,
-        cyclomatic_complexity: map.get("cyclomatic_complexity")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.0),
-        cognitive_complexity: map.get("cognitive_complexity")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.0),
-        nesting_depth: map.get("nesting_depth")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as usize,
-        function_count: map.get("function_count")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(0) as usize,
-        comment_ratio: map.get("comment_ratio")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.0),
-        identifier_length_avg: map.get("identifier_length_avg")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.0),
-        complexity_level: map.get("complexity_level")
-            .and_then(|v| v.as_str())
-            .map(|s| match s {
-                "simple" => ComplexityLevel::Simple,
-                "medium" => ComplexityLevel::Medium,
-                "complex" => ComplexityLevel::Complex,
-                _ => ComplexityLevel::Medium,
+    let complexity_level = map
+        .get("complexity_level")
+        .and_then(|v| v.as_str())
+        .map(str_to_complexity)
+        .unwrap_or(ComplexityLevel::Medium);
+
+    let return_type_complexity = map
+        .get("return_type_complexity")
+        .map(|v| {
+            v.as_f64().unwrap_or_else(|| {
+                v.as_str()
+                    .map(estimate_complexity_from_label)
+                    .unwrap_or(1.5)
             })
-            .unwrap_or(ComplexityLevel::Medium),
+        })
+        .unwrap_or(1.5);
+
+    let design_pattern_usage = map
+        .get("design_patterns")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|value| value.as_str().map(|s| s.to_string()))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+
+    Ok(CodeFeatures {
+        complexity_level,
+        function_count: map.get("function_count").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+        class_count: map.get("class_count").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+        nesting_depth: map.get("nesting_depth").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+        parameter_count: map.get("parameter_count").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
+        return_type_complexity,
+        error_handling_present: map
+            .get("error_handling_present")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        documentation_present: map
+            .get("documentation_present")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        test_coverage: map.get("test_coverage").and_then(|v| v.as_f64()).unwrap_or(0.0),
+        naming_convention_score: map
+            .get("naming_convention_score")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.5),
+        design_pattern_usage,
     })
+}
+
+fn str_to_complexity(value: &str) -> ComplexityLevel {
+    match value {
+        "simple" => ComplexityLevel::Simple,
+        "medium" => ComplexityLevel::Medium,
+        "complex" => ComplexityLevel::Complex,
+        "very_complex" => ComplexityLevel::VeryComplex,
+        _ => ComplexityLevel::Medium,
+    }
+}
+
+fn estimate_complexity_from_label(value: &str) -> f64 {
+    match value {
+        "simple" => 1.0,
+        "medium" => 2.0,
+        "complex" => 3.0,
+        _ => 1.5,
+    }
 }
 
 /// Convert HashMap to ComplexityFeatures struct
@@ -209,10 +261,10 @@ fn hashmap_to_complexity_features(map: &HashMap<String, serde_json::Value>) -> R
 rustler::init!(
     "Elixir.Singularity.CodeAnalyzer.Native",
     [
-        calculate_ai_complexity_score,
+        calculate_language_complexity_score,
         extract_complexity_features,
         calculate_evolution_trends,
-        predict_ai_code_quality,
+        predict_code_quality,
         calculate_pattern_effectiveness,
         calculate_supervision_complexity,
         calculate_actor_complexity

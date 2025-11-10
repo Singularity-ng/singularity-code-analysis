@@ -175,7 +175,7 @@ impl FuncSpace {
     }
 }
 
-#[inline(always)]
+#[inline]
 fn compute_halstead_mi_and_wmc<T: ParserTrait>(state: &mut State) {
     state
         .halstead_maps
@@ -193,7 +193,7 @@ fn compute_halstead_mi_and_wmc<T: ParserTrait>(state: &mut State) {
     );
 }
 
-#[inline(always)]
+#[inline]
 fn compute_averages(state: &mut State) {
     let nom_functions = state.space.metrics.nom.functions_sum() as usize;
     let nom_closures = state.space.metrics.nom.closures_sum() as usize;
@@ -210,7 +210,7 @@ fn compute_averages(state: &mut State) {
         .finalize(nom_functions, nom_closures);
 }
 
-#[inline(always)]
+#[inline]
 fn compute_minmax(state: &mut State) {
     state.space.metrics.cyclomatic.compute_minmax();
     state.space.metrics.nexits.compute_minmax();
@@ -221,7 +221,7 @@ fn compute_minmax(state: &mut State) {
     state.space.metrics.abc.compute_minmax();
 }
 
-#[inline(always)]
+#[inline]
 fn compute_sum(state: &mut State) {
     state.space.metrics.wmc.compute_sum();
     state.space.metrics.npm.compute_sum();

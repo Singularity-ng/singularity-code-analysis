@@ -325,7 +325,7 @@ pub enum Java {
     FormalParametersRepeat1 = 318,
     ReceiverParameterRepeat1 = 319,
     TypeIdentifier = 320,
-    Error = 321,
+    Error = 65535,
 }
 
 impl From<Java> for &'static str {
@@ -665,7 +665,6 @@ impl From<u16> for Java {
     }
 }
 
-// Java == u16
 impl PartialEq<u16> for Java {
     #[inline(always)]
     fn eq(&self, x: &u16) -> bool {
@@ -673,7 +672,6 @@ impl PartialEq<u16> for Java {
     }
 }
 
-// u16 == Java
 impl PartialEq<Java> for u16 {
     #[inline(always)]
     fn eq(&self, x: &Java) -> bool {

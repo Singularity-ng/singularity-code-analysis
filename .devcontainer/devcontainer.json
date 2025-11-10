@@ -30,7 +30,7 @@
       ]
     }
   },
-  "postCreateCommand": "rustup component add rustfmt clippy && cargo fetch",
+  "postCreateCommand": "rustup component add rustfmt clippy && cargo fetch && cargo install cargo-insta cargo-outdated && ./scripts/install-git-hooks.sh && ./scripts/check-grammar-sync.sh",
   "runArgs": [
     "--init"
   ],

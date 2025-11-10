@@ -50,7 +50,7 @@ impl Stats {
     /// Returns the `Mi` metric calculated using the original formula.
     ///
     /// Its value can be negative.
-    #[inline(always)]
+    #[inline]
     pub fn mi_original(&self) -> f64 {
         // http://www.projectcodemeter.com/cost_estimation/help/GL_maintainability.htm
         171.0 - 5.2 * (self.halstead_volume).ln() - 0.23 * self.cyclomatic - 16.2 * self.sloc.ln()
@@ -60,7 +60,7 @@ impl Stats {
     /// employed by the Software Engineering Insitute (SEI).
     ///
     /// Its value can be negative.
-    #[inline(always)]
+    #[inline]
     pub fn mi_sei(&self) -> f64 {
         // http://www.projectcodemeter.com/cost_estimation/help/GL_maintainability.htm
         171.0 - 5.2 * self.halstead_volume.log2() - 0.23 * self.cyclomatic - 16.2 * self.sloc.log2()
@@ -69,7 +69,7 @@ impl Stats {
 
     /// Returns the `Mi` metric calculated using the derivative formula
     /// employed by Microsoft Visual Studio.
-    #[inline(always)]
+    #[inline]
     pub fn mi_visual_studio(&self) -> f64 {
         // http://www.projectcodemeter.com/cost_estimation/help/GL_maintainability.htm
         let formula = 171.0

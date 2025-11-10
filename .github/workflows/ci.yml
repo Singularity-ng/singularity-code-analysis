@@ -86,3 +86,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build release
         run: cargo build --release --lib
+
+  grammar-sync:
+    name: Grammar Sync
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/devcontainers/rust:1-bullseye
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Verify generated enums are current
+        run: ./scripts/check-grammar-sync.sh

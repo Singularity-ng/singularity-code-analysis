@@ -121,50 +121,50 @@ impl Stats {
     pub(crate) fn merge(&self, _other: &Stats) {}
 
     /// Returns `η1`, the number of distinct operators
-    #[inline(always)]
+    #[inline]
     pub fn u_operators(&self) -> f64 {
         self.u_operators as f64
     }
 
     /// Returns `N1`, the number of total operators
-    #[inline(always)]
+    #[inline]
     pub fn operators(&self) -> f64 {
         self.operators as f64
     }
 
     /// Returns `η2`, the number of distinct operands
-    #[inline(always)]
+    #[inline]
     pub fn u_operands(&self) -> f64 {
         self.u_operands as f64
     }
 
     /// Returns `N2`, the number of total operands
-    #[inline(always)]
+    #[inline]
     pub fn operands(&self) -> f64 {
         self.operands as f64
     }
 
     /// Returns the program length
-    #[inline(always)]
+    #[inline]
     pub fn length(&self) -> f64 {
         self.operands() + self.operators()
     }
 
     /// Returns the calculated estimated program length
-    #[inline(always)]
+    #[inline]
     pub fn estimated_program_length(&self) -> f64 {
         self.u_operators() * self.u_operators().log2()
             + self.u_operands() * self.u_operands().log2()
     }
 
     /// Returns the purity ratio
-    #[inline(always)]
+    #[inline]
     pub fn purity_ratio(&self) -> f64 {
         self.estimated_program_length() / self.length()
     }
 
     /// Returns the program vocabulary
-    #[inline(always)]
+    #[inline]
     pub fn vocabulary(&self) -> f64 {
         self.u_operands() + self.u_operators()
     }
@@ -172,26 +172,26 @@ impl Stats {
     /// Returns the program volume.
     ///
     /// Unit of measurement: bits
-    #[inline(always)]
+    #[inline]
     pub fn volume(&self) -> f64 {
         // Assumes a uniform binary encoding for the vocabulary is used.
         self.length() * self.vocabulary().log2()
     }
 
     /// Returns the estimated difficulty required to program
-    #[inline(always)]
+    #[inline]
     pub fn difficulty(&self) -> f64 {
         self.u_operators() / 2. * self.operands() / self.u_operands()
     }
 
     /// Returns the estimated level of difficulty required to program
-    #[inline(always)]
+    #[inline]
     pub fn level(&self) -> f64 {
         1. / self.difficulty()
     }
 
     /// Returns the estimated effort required to program
-    #[inline(always)]
+    #[inline]
     pub fn effort(&self) -> f64 {
         self.difficulty() * self.volume()
     }
@@ -199,7 +199,7 @@ impl Stats {
     /// Returns the estimated time required to program.
     ///
     /// Unit of measurement: seconds
-    #[inline(always)]
+    #[inline]
     pub fn time(&self) -> f64 {
         // The floating point `18.` aims to describe the processing rate of the
         // human brain. It is called Stoud number, S, and its
@@ -219,7 +219,7 @@ impl Stats {
     ///
     /// This metric represents the average amount of work a programmer can do
     /// without introducing an error.
-    #[inline(always)]
+    #[inline]
     pub fn bugs(&self) -> f64 {
         // The floating point `3000.` represents the number of elementary
         // mental discriminations.
@@ -252,12 +252,12 @@ where
     fn compute<'a>(node: &Node<'a>, code: &'a [u8], halstead_maps: &mut HalsteadMaps<'a>);
 }
 
-#[inline(always)]
+#[inline]
 fn get_id<'a>(node: &Node<'a>, code: &'a [u8]) -> &'a [u8] {
     &code[node.start_byte()..node.end_byte()]
 }
 
-#[inline(always)]
+#[inline]
 fn compute_halstead<'a, T: Getter>(
     node: &Node<'a>,
     code: &'a [u8],

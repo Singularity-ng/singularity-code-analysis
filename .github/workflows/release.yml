@@ -45,9 +45,16 @@ jobs:
       - name: Build release artifacts
         run: cargo build --workspace --release
 
+      - name: Prepare artifact directory
+        run: mkdir -p release-artifacts
+
+      - name: Generate release review
+        run: ./scripts/generate-release-review.sh release-artifacts/RELEASE_REVIEW.md
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+
       - name: Package artifacts
         run: |
-          mkdir -p release-artifacts
           find target/release -maxdepth 1 -type f -executable -exec cp {} release-artifacts/ \;
           tar -czf release-artifacts/artefacts.tar.gz -C target/release .
 

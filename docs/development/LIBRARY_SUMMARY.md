@@ -51,7 +51,7 @@ A **best-in-class Rust library** for AI/LLM-powered code analysis that integrate
 ### **5. Performance Optimizations**
 - **O(1) Language Detection** - Hash map lookup instead of linear search
 - **Global Registry** - Single instance with lazy initialization
-- **100% Inline Optimization** - All critical methods use `#[inline(always)]`
+- **100% Inline Optimization** - All critical methods use `#[inline]`
 - **Thread-Safe Operations** - Concurrent access support
 - **Memory Efficient** - Optimized data structures and algorithms
 - **Vector Search** - Sub-second similarity search with pgvector
