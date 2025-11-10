@@ -18,11 +18,10 @@ struct Config {
     language: Option<LANG>,
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn act_on_file(path: PathBuf, cfg: &Config) -> std::io::Result<()> {
     // Open file
-    let source = if let Some(source) = read_file_with_eol(&path)? {
-        source
-    } else {
+    let Some(source) = read_file_with_eol(&path)? else {
         return Ok(());
     };
 

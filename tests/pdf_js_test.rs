@@ -3,6 +3,7 @@ mod common;
 use common::compare_rca_output_with_files;
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn test_pdfjs() {
     // FIXME: Ignoring these files temporarily due to a parse error (see issue: https://github.com/singularity/rust-code-analysis/issues/1143),
     // in order to allow CI to pass until the issue is resolved.

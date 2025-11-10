@@ -39,7 +39,9 @@ end
 
     println!("\n=== All Named Node Kinds ===");
     for i in 0..language.node_kind_count() {
-        let Ok(kind_id) = u16::try_from(i) else { break; };
+        let Ok(kind_id) = u16::try_from(i) else {
+            break;
+        };
         if language.node_kind_is_named(kind_id) {
             if let Some(kind) = language.node_kind_for_id(kind_id) {
                 println!("{kind_id:3}: {kind}");
