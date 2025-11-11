@@ -29,7 +29,23 @@ defmodule SingularityCodeAnalysis.MixProject do
       elixir: "~> 1.19",
       compilers: Mix.compilers(),
       rustler_crates: [singularity_code_analysis: [skip_compilation?: true]],
-      deps: deps()
+      deps: deps(),
+
+      # Testing and coverage
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
+
+      # Dialyzer
+      dialyzer: [
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+        plt_add_apps: [:mix, :ex_unit],
+        flags: [:error_handling, :underspecs, :unmatched_returns]
+      ]
     ]
   end
 
@@ -38,6 +54,20 @@ defmodule SingularityCodeAnalysis.MixProject do
   end
 
   defp deps do
-    [{:rustler, "~> 0.37", runtime: false}]
+    [
+      {:rustler, "~> 0.37", runtime: false},
+
+      # Code quality and linting
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:doctor, "~> 0.21", only: [:dev, :test], runtime: false},
+
+      # Security scanning
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+
+      # Code coverage
+      {:excoveralls, "~> 0.18", only: :test}
+    ]
   end
 end

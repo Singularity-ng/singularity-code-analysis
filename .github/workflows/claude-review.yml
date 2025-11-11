@@ -1,0 +1,61 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }}...${{ github.sha }} > pr-diff.txt
+          echo "diff-size=$(wc -l < pr-diff.txt)" >> $GITHUB_OUTPUT
+
+      - name: Run Claude Code Review
+        if: steps.diff.outputs.diff-size > 0
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # Install Claude Code if not available
+          if ! command -v claude &> /dev/null; then
+            curl -fsSL https://raw.githubusercontent.com/anthropics/claude-code/main/install.sh | sh
+          fi
+
+          # Configure Claude Code
+          export ANTHROPIC_API_KEY=$CLAUDE_CODE_OAUTH_TOKEN
+
+          # Review the PR
+          claude review \
+            --pr-number ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --format markdown \
+            > review-output.md
+
+          # Post review as comment
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body-file review-output.md \
+            --repo ${{ github.repository }}
+
+      - name: Upload review artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-review
+          path: |
+            pr-diff.txt
+            review-output.md

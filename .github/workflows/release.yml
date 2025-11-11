@@ -17,6 +17,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Nix with Cachix
+        uses: cachix/install-nix-action@v30
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+
+      - name: Setup FlakeHub Cache
+        uses: DeterminateSystems/flakehub-cache-action@v7
+        with:
+          cache-name: "singularity-analysis"
+          visibility: "public"
+        env:
+          FLAKEHUB_PUSH_TOKEN: ${{ secrets.FLAKEHUB_PUSH_TOKEN }}
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: mikkihugo
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -36,14 +55,30 @@ jobs:
           path: target
           key: cargo-release-target-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Clippy (pedantic)
-        run: cargo clippy --workspace --all-targets -- -D warnings -W clippy::pedantic
+      - name: Clippy (strictest settings for release)
+        run: |
+          cargo clippy --workspace --all-targets --all-features -- \
+            -D warnings \
+            -D clippy::all \
+            -D clippy::pedantic \
+            -D clippy::nursery \
+            -D clippy::cargo \
+            -W clippy::restriction \
+            -A clippy::missing_docs_in_private_items \
+            -A clippy::implicit_return \
+            -A clippy::missing_inline_in_public_items \
+            -A clippy::question_mark_used \
+            -A clippy::mod_module_files \
+            -A clippy::self_named_module_files
 
       - name: Run tests
         run: cargo test --workspace --all-targets
 
-      - name: Build release artifacts
-        run: cargo build --workspace --release
+      - name: Build release library
+        run: cargo build --workspace --release --lib
+
+      - name: Build CLI binary
+        run: cargo build --release --bin singularity-rca --features cli
 
       - name: Prepare artifact directory
         run: mkdir -p release-artifacts
@@ -53,10 +88,32 @@ jobs:
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
 
-      - name: Package artifacts
+      - name: Package CLI binary
+        run: |
+          if [ -f target/release/singularity-rca ]; then
+            cp target/release/singularity-rca release-artifacts/
+            chmod +x release-artifacts/singularity-rca
+            echo "✓ CLI binary packaged"
+          fi
+
+      - name: Package library artifacts
         run: |
           find target/release -maxdepth 1 -type f -executable -exec cp {} release-artifacts/ \;
-          tar -czf release-artifacts/artefacts.tar.gz -C target/release .
+          find target/release -maxdepth 1 -name "*.so" -exec cp {} release-artifacts/ \;
+
+      - name: Create source tarball
+        run: |
+          tar -czf release-artifacts/singularity-rca-source.tar.gz \
+            --exclude=target \
+            --exclude=.git \
+            --exclude=_build \
+            --exclude=deps \
+            --exclude=.direnv \
+            .
+
+      - name: Create binary tarball
+        run: |
+          tar -czf release-artifacts/singularity-rca-binaries.tar.gz -C release-artifacts singularity-rca
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

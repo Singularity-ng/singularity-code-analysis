@@ -1,0 +1,14 @@
+# Binary cache authentication tokens
+# Copy this file to .envrc.local and replace <TOKEN> placeholders with your actual tokens
+
+# Cachix authentication token
+# Get your token from https://app.cachix.org/personal-auth-tokens
+export CACHIX_AUTH_TOKEN="<CACHIX_TOKEN>"
+
+# FlakeHub authentication token
+# Get your token from https://flakehub.com/settings/tokens
+export FLAKEHUB_PUSH_TOKEN="<FLAKEHUB_TOKEN>"
+
+# Example token formats (DO NOT COMMIT):
+# export CACHIX_AUTH_TOKEN="eyJhbGciOiJIUzI1NiJ9..."
+# export FLAKEHUB_PUSH_TOKEN="019a70a3-93a6-7f78-a389-45cf47e3bf30"

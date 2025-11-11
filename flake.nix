@@ -1,6 +1,18 @@
 {
   description = "Singularity Analysis Engine development environment";
 
+  # Configure binary caches for faster builds
+  nixConfig = {
+    extra-substituters = [
+      "https://mikkihugo.cachix.org"
+      "https://cache.nixos.org"
+    ];
+    extra-trusted-public-keys = [
+      "mikkihugo.cachix.org-1:TJ+vwFP1XImrAATJbqWLaEvtzuWpui9hw5stDdeOTAE="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+    ];
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
@@ -33,16 +45,25 @@
           cargo-machete   # find unused dependencies
           cargo-deny      # lint dependencies
           cargo-release   # release automation
+          cargo-udeps     # find unused dependencies (build-time)
+          cargo-expand    # expand macros
+          cargo-bloat     # find what takes space in binary
+          cargo-geiger    # detect unsafe usage
+          cargo-fuzz      # fuzz testing
+          cargo-llvm-lines # count LLVM IR lines
           sccache         # compilation cache
 
+          # Node.js for additional tooling (jscpd can be installed via npm)
+          nodejs
+
           # Elixir and Erlang
-          beam.packages.erlang_27.elixir_1_17  # Latest stable Elixir (1.17 is the latest stable, 1.19 doesn't exist yet)
-          beam.packages.erlang_27.erlang
-          beam.packages.erlang_27.rebar3
-          beam.packages.erlang_27.hex
+          beam.packages.erlang_28.elixir_1_19  # Elixir 1.19 with Erlang/OTP 28
+          beam.packages.erlang_28.erlang
+          beam.packages.erlang_28.rebar3
+          beam.packages.erlang_28.hex
 
           # Elixir tools from Nix (pre-built, no compilation needed)
-          beam.packages.erlang_27.elixir-ls  # Language server
+          beam.packages.erlang_28.elixir-ls  # Language server
 
           # Build dependencies for NIFs
           pkg-config
@@ -51,8 +72,13 @@
           # Development tools
           git
           gnumake
+          just           # command runner (modern make alternative)
           gcc
           libiconv
+
+          # Security and quality scanning
+          gitleaks       # secret scanning
+          shellcheck     # shell script linting
 
           # Optional: useful for development
           jq
@@ -60,7 +86,7 @@
           fd
           bat
           eza
-          tokei  # code statistics
+          tokei          # code statistics
         ];
 
         # Set up environment variables
@@ -73,28 +99,31 @@
           echo "  • Elixir: $(elixir --version | grep Elixir | cut -d' ' -f2)"
           echo "  • Erlang/OTP: $(erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().' -noshell | tr -d '\"')"
           echo ""
-          echo "🛠️  Available Cargo tools:"
-          echo "  • cargo-edit (add/rm/upgrade)"
-          echo "  • cargo-watch (auto-recompile)"
-          echo "  • cargo-audit (security)"
-          echo "  • cargo-outdated"
-          echo "  • cargo-tarpaulin (coverage)"
-          echo "  • cargo-nextest (testing)"
-          echo "  • cargo-machete (unused deps)"
-          echo "  • cargo-deny (lint deps)"
-          echo "  • cargo-release"
+          echo "🛠️  Rust Quality Tools:"
+          echo "  • cargo-audit, cargo-deny, cargo-geiger (security)"
+          echo "  • cargo-nextest, cargo-tarpaulin (testing & coverage)"
+          echo "  • cargo-outdated, cargo-udeps, cargo-machete (dependencies)"
+          echo "  • cargo-bloat, cargo-llvm-lines (performance analysis)"
+          echo "  • cargo-expand, cargo-fuzz (advanced)"
           echo ""
-          echo "🧪 Elixir tools:"
-          echo "  • elixir-ls (language server)"
-          echo "  • hex (package manager)"
-          echo "  • rebar3 (Erlang build tool)"
+          echo "💜 Elixir Quality Tools:"
+          echo "  • credo, dialyzer, doctor (code quality)"
+          echo "  • sobelow, mix_audit (security)"
+          echo "  • excoveralls (coverage)"
           echo ""
-          echo "💡 Tips:"
-          echo "  • Run 'mix local.hex --force' if hex needs setup"
-          echo "  • Run 'mix local.rebar --force' if rebar needs setup"
-          echo "  • Install Elixir deps: 'mix deps.get'"
-          echo "  • For credo: 'mix archive.install hex credo'"
-          echo "  • For dialyxir: add to mix.exs deps and 'mix deps.get'"
+          echo "🔒 Security & General:"
+          echo "  • gitleaks (secret scanning)"
+          echo "  • shellcheck (shell script linting)"
+          echo "  • tokei (code statistics)"
+          echo "  • jscpd (install: npm install -g jscpd)"
+          echo ""
+          echo "🚀 Quick Commands:"
+          echo "  • make help          - Show all available targets"
+          echo "  • make quality       - Run all quality checks"
+          echo "  • make security      - Security scans"
+          echo "  • make test          - Run all tests"
+          echo "  • make coverage      - Generate coverage reports"
+          echo "  • See QUALITY.md for detailed documentation"
           echo ""
 
           # Set up Rust environment

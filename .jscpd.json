@@ -1,0 +1,35 @@
+{
+  "threshold": 3,
+  "reporters": ["html", "console", "badge"],
+  "ignore": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/target/**",
+    "**/_build/**",
+    "**/deps/**",
+    "**/dist/**",
+    "**/*.min.js",
+    "**/*.lock",
+    "**/*.log"
+  ],
+  "format": [
+    "rust",
+    "elixir",
+    "javascript",
+    "typescript",
+    "python",
+    "go",
+    "java",
+    "cpp",
+    "c",
+    "csharp"
+  ],
+  "minLines": 5,
+  "minTokens": 50,
+  "output": "./reports/jscpd",
+  "absolute": true,
+  "gitignore": true,
+  "blame": false,
+  "cache": true,
+  "exitCode": 1
+}

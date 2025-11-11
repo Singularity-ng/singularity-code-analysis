@@ -1,0 +1,72 @@
+name: Claude Code Assistant
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude-assist:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issue_comment' &&
+      contains(github.event.comment.body, '@claude') &&
+      github.event.issue.pull_request
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.issue.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Extract Claude command
+        id: command
+        run: |
+          COMMENT="${{ github.event.comment.body }}"
+          COMMAND=$(echo "$COMMENT" | grep -oP '@claude \K.*' || echo "help")
+          echo "command=$COMMAND" >> $GITHUB_OUTPUT
+
+      - name: Run Claude Code
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # Install Claude Code if not available
+          if ! command -v claude &> /dev/null; then
+            curl -fsSL https://raw.githubusercontent.com/anthropics/claude-code/main/install.sh | sh
+          fi
+
+          # Configure Claude Code
+          export ANTHROPIC_API_KEY=$CLAUDE_CODE_OAUTH_TOKEN
+
+          # Execute command
+          claude ${{ steps.command.outputs.command }} > claude-output.txt
+
+      - name: Commit changes if any
+        run: |
+          git config --local user.email "claude-bot@anthropic.com"
+          git config --local user.name "Claude Code Bot"
+
+          if [[ -n $(git status -s) ]]; then
+            git add -A
+            git commit -m "feat: changes by Claude Code
+
+@claude ${{ steps.command.outputs.command }}
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+            git push
+          fi
+
+      - name: Post response
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.issue.number }} \
+            --body-file claude-output.txt \
+            --repo ${{ github.repository }}
