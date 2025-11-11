@@ -176,11 +176,9 @@ fn main() -> Result<()> {
             output,
             format,
         } => report_command(&path, output, format)?,
-        Commands::Compare {
-            path1,
-            path2,
-            diff,
-        } => compare_command(&path1, &path2, diff, cli.format)?,
+        Commands::Compare { path1, path2, diff } => {
+            compare_command(&path1, &path2, diff, cli.format)?
+        }
     }
 
     Ok(())
@@ -341,7 +339,13 @@ fn complexity_command(
         OutputFormat::Table | OutputFormat::Pretty => {
             let mut table = Table::new();
             table.load_preset(UTF8_FULL);
-            table.set_header(vec!["File", "Function", "Cyclomatic", "Cognitive", "Status"]);
+            table.set_header(vec![
+                "File",
+                "Function",
+                "Cyclomatic",
+                "Cognitive",
+                "Status",
+            ]);
 
             for item in &complexities {
                 let status = if item.cyclomatic > threshold {
@@ -387,7 +391,11 @@ fn report_command(path: &Path, output: Option<PathBuf>, format: ReportFormat) ->
         anyhow::bail!("Path must be a valid directory: {}", path.display());
     }
 
-    log::info!("Generating {} report for: {}", format_name(format), path.display());
+    log::info!(
+        "Generating {} report for: {}",
+        format_name(format),
+        path.display()
+    );
 
     let spinner = ProgressBar::new_spinner();
     spinner.set_message("Generating report...");
@@ -411,17 +419,16 @@ fn report_command(path: &Path, output: Option<PathBuf>, format: ReportFormat) ->
     Ok(())
 }
 
-fn compare_command(
-    path1: &Path,
-    path2: &Path,
-    _diff: bool,
-    format: OutputFormat,
-) -> Result<()> {
+fn compare_command(path1: &Path, path2: &Path, _diff: bool, format: OutputFormat) -> Result<()> {
     if !path1.exists() || !path2.exists() {
         anyhow::bail!("Both paths must exist");
     }
 
-    log::info!("Comparing:\n  {} vs\n  {}", path1.display(), path2.display());
+    log::info!(
+        "Comparing:\n  {} vs\n  {}",
+        path1.display(),
+        path2.display()
+    );
 
     // TODO: Implement actual comparison
     let comparison = mock_comparison(path1, path2);
@@ -612,10 +619,7 @@ fn generate_mock_report(_path: &Path, format: ReportFormat) -> String {
     }
 }
 
-fn mock_comparison(
-    _path1: &Path,
-    _path2: &Path,
-) -> Vec<(String, String, String, String)> {
+fn mock_comparison(_path1: &Path, _path2: &Path) -> Vec<(String, String, String, String)> {
     vec![
         (
             "Cyclomatic Complexity".to_string(),
@@ -690,7 +694,10 @@ fn display_metrics_table(metrics: &MetricsData, filter: Option<MetricType>) {
     let show_all = filter.is_none() || matches!(filter, Some(MetricType::All));
 
     if show_all || matches!(filter, Some(MetricType::Cyclomatic)) {
-        table.add_row(vec!["Cyclomatic Complexity", &metrics.cyclomatic.to_string()]);
+        table.add_row(vec![
+            "Cyclomatic Complexity",
+            &metrics.cyclomatic.to_string(),
+        ]);
     }
     if show_all || matches!(filter, Some(MetricType::Cognitive)) {
         table.add_row(vec!["Cognitive Complexity", &metrics.cognitive.to_string()]);
@@ -728,10 +735,7 @@ fn display_metrics_pretty(metrics: &MetricsData, filter: Option<MetricType>) {
         println!("  Lines of Code: {}", metrics.loc);
     }
     if show_all || matches!(filter, Some(MetricType::Maintainability)) {
-        println!(
-            "  Maintainability Index: {:.1}",
-            metrics.maintainability
-        );
+        println!("  Maintainability Index: {:.1}", metrics.maintainability);
     }
 }
 
